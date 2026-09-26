@@ -92,7 +92,7 @@
     <!-- Script de Gestão, Filtros, PDF com Logótipo e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
-        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // Verifica Autenticação
@@ -142,7 +142,7 @@
                 const selectClient = document.getElementById('filter-client');
                 querySnapshot.forEach((docSnap) => {
                     const client = docSnap.data();
-                    clientsMap[docSnap.id] = client; // Guarda o objeto completo do cliente
+                    clientsMap[docSnap.id] = client;
                     const option = document.createElement('option');
                     option.value = docSnap.id;
                     option.textContent = client.name || client.razaoSocial;
@@ -172,7 +172,7 @@
             }
         }
 
-        // Renderizar a lista de ordens de serviço no ecrã com valores e botão de PDF
+        // Renderizar a lista de ordens de serviço no ecrã com valores e botões
         function renderHistory(orders) {
             const historyListDiv = document.getElementById('history-list');
             historyListDiv.innerHTML = "";
@@ -187,6 +187,9 @@
                 const clientInfo = clientsMap[order.clientId] || {};
                 const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
                 const dataInicioFormatada = order.timeStart ? new Date(order.timeStart).toLocaleString('pt-PT') : 'N/A';
+                
+                const temHoraFim = order.timeEnd && order.timeEnd !== "";
+                const dataFimFormatada = temHoraFim ? new Date(order.timeEnd).toLocaleString('pt-PT') : '<span style="color: #d9534f; font-weight: bold;">Pendente de regresso</span>';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -195,7 +198,7 @@
                             <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
                         </div>
                         <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Manutentor:</strong> ${order.technicianName || 'N/A'}</p>
+                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Fim/Regresso:</strong> ${dataFimFormatada}</p>
                         
                         <!-- Resumo Financeiro na Listagem -->
                         <p style="margin: 4px 0; font-size: 13px; color: #444;">
@@ -207,10 +210,13 @@
 
                         <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
 
-                        <!-- Botão para Gerar PDF e Partilhar -->
-                        <div>
+                        <!-- Botões de Ação -->
+                        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
                             <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
                                 📄 Gerar Relatório Modelo RG
+                            </button>
+                            <button onclick="adicionarHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                                ⏱️ ${temHoraFim ? 'Editar Hora Regresso' : 'Adicionar Hora Regresso (Casa)'}
                             </button>
                         </div>
                     </div>
@@ -218,6 +224,41 @@
             });
             historyListDiv.innerHTML = html;
         }
+
+        // Função global para adicionar ou atualizar a hora de regresso a casa
+        window.adicionarHoraFim = async function(osId) {
+            const novaHora = prompt("Indique a data e hora de chegada a casa/base (Formato AAAA-MM-DDTHH:MM, ex: 2026-09-26T18:30):");
+            if (!novaHora) return;
+
+            const order = allOrders.find(item => item.id === osId);
+            if (!order) return;
+
+            const start = new Date(order.timeStart);
+            const end = new Date(novaHora);
+            const diffMs = end - start;
+            const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
+            
+            const VALOR_HORA_FIXO = 25.00;
+            const valorDasHoras = diffHours * VALOR_HORA_FIXO;
+            const laborManual = parseFloat(order.laborValueManual) || 0;
+            const totalValue = valorDasHoras + laborManual;
+
+            try {
+                const docRef = doc(db, "service_orders", osId);
+                await updateDoc(docRef, {
+                    timeEnd: novaHora,
+                    totalHours: diffHours.toFixed(2),
+                    valorDasHoras: valorDasHoras.toFixed(2),
+                    totalValue: totalValue.toFixed(2)
+                });
+
+                alert("Hora de regresso e valores atualizados com sucesso!");
+                loadHistory();
+            } catch (error) {
+                console.error("Erro ao atualizar hora final:", error);
+                alert("Ocorreu um erro ao atualizar os dados.");
+            }
+        };
 
         // Função global para gerar o PDF com o Logótipo e abrir opções de partilha nativa
         window.gerarEPartilharPDF = async function(osId) {
@@ -232,7 +273,6 @@
                 const { jsPDF } = window.jspdf;
                 const docPDF = new jsPDF();
 
-                // Dados Oficiais da Empresa Responsável
                 const empresa = {
                     nome: "RG Soluções Técnicas",
                     razaoSocial: "RG Soluções Técnicas Ltda",
@@ -242,13 +282,11 @@
 
                 const dataEmissao = new Date().toLocaleDateString('pt-BR');
 
-                // Inserir o Logótipo no canto superior esquerdo do PDF
                 const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
                 if (logoBase64) {
                     docPDF.addImage(logoBase64, 'PNG', 20, 10, 32, 14);
                 }
 
-                // Cabeçalho / Título do Relatório ao lado do logótipo
                 docPDF.setFont("helvetica", "bold");
                 docPDF.setFontSize(13);
                 docPDF.text("Orçamento / Manutenção Técnica", 58, 15);
@@ -262,7 +300,6 @@
 
                 let y = 33;
 
-                // SEÇÃO: EMPRESA RESPONSÁVEL
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -279,7 +316,6 @@
 
                 y += 18;
 
-                // SEÇÃO: CLIENTE
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -295,7 +331,6 @@
 
                 y += 24;
 
-                // SEÇÃO: HORÁRIO
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -304,11 +339,10 @@
                 y += 7;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`Data e hora de chegada: ${order.timeStart || 'N/A'}`, 22, y + 5);
-                docPDF.text(`Data e hora de saída: ${order.timeEnd || 'N/A'}`, 105, y + 5);
+                docPDF.text(`Data e hora de saída (Regresso): ${order.timeEnd || 'Pendente'}`, 105, y + 5);
 
                 y += 15;
 
-                // SEÇÃO: SERVIÇOS REALIZADOS
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -322,7 +356,6 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // SEÇÃO: VALOR TOTAL
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -337,7 +370,6 @@
 
                 y += 28;
 
-                // ASSINATURAS
                 docPDF.setLineWidth(0.2);
                 docPDF.line(20, y + 15, 90, y + 15);
                 docPDF.line(120, y + 15, 190, y + 15);
@@ -354,12 +386,10 @@
                     docPDF.addImage(order.customerSignature, 'PNG', 30, y - 5, 50, 18);
                 }
 
-                // Criar o ficheiro PDF em formato Blob e objeto File
                 const pdfBlob = docPDF.output('blob');
                 const fileName = `Relatorio_RG_${osId.substring(0, 6)}.pdf`;
                 const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-                // Tentar partilha nativa do dispositivo (WhatsApp, E-mail, etc.)
                 if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                     try {
                         await navigator.share({
@@ -369,11 +399,10 @@
                         });
                         return;
                     } catch (error) {
-                        if (error.name === 'AbortError') return; // Cancelado pelo utilizador
+                        if (error.name === 'AbortError') return;
                     }
                 }
 
-                // Fallback de download direto
                 const pdfUrl = URL.createObjectURL(pdfBlob);
                 const downloadLink = document.createElement('a');
                 downloadLink.href = pdfUrl;
@@ -418,7 +447,6 @@
             renderHistory(filtered);
         });
 
-        // Inicialização ao carregar a página
         window.addEventListener('DOMContentLoaded', async () => {
             await loadClientsFilter();
             await loadHistory();
