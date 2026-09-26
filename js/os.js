@@ -4,10 +4,8 @@ import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/
 const clientSelect = document.getElementById('client-select');
 const form = document.getElementById('os-form');
 
-// Define aqui o valor fixo cobrado por hora de trabalho
 const VALOR_HORA_FIXO = 25.00; 
 
-// 1. Função para ajustar a escala dos canvas (Garante nitidez e toque correto em telemóveis/tablets)
 function ajustarCanvas(canvas) {
     if (!canvas) return;
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -22,14 +20,12 @@ const clientCanvas = document.getElementById('client-pad');
 ajustarCanvas(techCanvas);
 ajustarCanvas(clientCanvas);
 
-// Inicializar as caixas de assinatura digital (Signature Pad)
 const techPad = new SignaturePad(techCanvas);
 const clientPad = new SignaturePad(clientCanvas);
 
 document.getElementById('clear-tech').addEventListener('click', () => techPad.clear());
 document.getElementById('clear-client').addEventListener('click', () => clientPad.clear());
 
-// 2. Carregar clientes cadastrados para o menu de seleção (<select>)
 async function loadClientsDropdown() {
     try {
         const querySnapshot = await getDocs(collection(db, "clients"));
@@ -45,7 +41,6 @@ async function loadClientsDropdown() {
             const option = document.createElement('option');
             option.value = doc.id;
             
-            // Guardar o nome e email nos datasets para facilitar depois
             option.dataset.clientName = client.name || client.razaoSocial || 'Cliente sem nome';
             option.dataset.clientEmail = client.email || '';
 
@@ -60,7 +55,6 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// 3. Submeter a Ordem de Serviço para o Firestore
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -71,15 +65,12 @@ form.addEventListener('submit', async (e) => {
 
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
-    // Recolher tempos e o valor manual da mão de obra inserido no formulário
     const timeStartStr = document.getElementById('time-start').value;
     const timeEndStr = document.getElementById('time-end').value;
-    const laborValueManual = parseFloat(document.getElementById('labor-value').value) || 0;
 
     let diffHours = 0;
     let valorDasHoras = 0;
 
-    // Calcular horas apenas se a hora final foi preenchida
     if (timeEndStr) {
         const start = new Date(timeStartStr);
         const end = new Date(timeEndStr);
@@ -88,8 +79,7 @@ form.addEventListener('submit', async (e) => {
         valorDasHoras = diffHours * VALOR_HORA_FIXO;
     }
 
-    // Soma total (Valor das horas automáticas + Mão de obra manual)
-    const totalValue = valorDasHoras + laborValueManual;
+    const totalValue = valorDasHoras;
 
     const osData = {
         clientId: clientSelect.value,
@@ -97,16 +87,14 @@ form.addEventListener('submit', async (e) => {
         clientEmail: selectedOption.dataset.clientEmail,
         equipment: document.getElementById('equipment').value,
         brand: document.getElementById('brand').value,
-        serialNumber: document.getElementById('serial-number').value,
         model: document.getElementById('model').value,
+        serialNumber: document.getElementById('serial-number').value,
         serviceNature: document.getElementById('service-nature').value,
         serviceArea: document.getElementById('service-area').value,
         timeStart: timeStartStr,
-        timeEnd: timeEndStr || "", // Permite ficar vazio se recolhido no cliente
+        timeEnd: timeEndStr || "",
         totalHours: diffHours.toFixed(2),
         hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
-        valorDasHoras: valorDasHoras.toFixed(2),
-        laborValueManual: laborValueManual.toFixed(2),
         totalValue: totalValue.toFixed(2),
         description: document.getElementById('description').value,
         technicianName: document.getElementById('technician-name').value,
@@ -122,7 +110,6 @@ form.addEventListener('submit', async (e) => {
         techPad.clear();
         clientPad.clear();
         
-        // Redirecionar para o histórico após gravar
         window.location.href = "historico.html";
     } catch (error) {
         console.error("Erro ao guardar O.S.: ", error);
