@@ -16,10 +16,9 @@
                 <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
             </div>
             <nav>
-                <a href="index.html">🏠 Início</a>
+                <a href="historico.html">🏠 Início / Histórico</a>
                 <a href="clientes.html">👥 Gestão de Clientes</a>
                 <a href="nova-os.html" class="active">📋 Nova Ordem de Serviço</a>
-                <a href="historico.html">📜 Histórico</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
             </nav>
         </aside>
@@ -29,7 +28,7 @@
             <button class="menu-toggle" id="menuToggle">☰ Menu</button>
 
             <div class="container" style="max-width: 800px;">
-                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
+                <a href="historico.html" class="voltar">⬅ Voltar ao Histórico</a>
                 
                 <h2>Nova Ordem de Serviço</h2>
 
@@ -65,7 +64,7 @@
                         </div>
                     </div>
 
-                    <!-- Tipo e Área de Serviço (Atualizado para Select) -->
+                    <!-- Tipo e Área de Serviço -->
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                         <div style="flex: 1; min-width: 200px;">
                             <label style="display: block; font-weight: bold; margin-bottom: 5px;">Tipo de Manutenção:</label>
@@ -128,6 +127,33 @@
             </div>
         </main>
     </div>
+
+    <!-- Script de Gestão de Autenticação e Menu Mobile -->
+    <script type="module">
+        import { auth } from './js/firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = 'login.html';
+        });
+
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        const btnLogout = document.getElementById('btn-logout');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await signOut(auth);
+                window.location.href = 'login.html';
+            });
+        }
+    </script>
 
     <script type="module" src="js/os.js"></script>
 </body>
