@@ -83,15 +83,30 @@
                         </div>
                     </div>
 
-                    <!-- Horários -->
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-                        <div style="flex: 1; min-width: 200px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Data e Hora de Início:</label>
-                            <input type="datetime-local" id="time-start" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+                    <!-- Controlo de Turnos e Horários -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd;">
+                        <h3 style="font-size: 15px; margin-top: 0; color: #2c3e50; margin-bottom: 10px;">Controlo de Turnos e Horários</h3>
+                        
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Início Manhã:</label>
+                                <input type="datetime-local" id="time-start-manha" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Final Manhã:</label>
+                                <input type="datetime-local" id="time-end-manha" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
                         </div>
-                        <div style="flex: 1; min-width: 200px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Data e Hora de Fim (Opcional no campo):</label>
-                            <input type="datetime-local" id="time-end" style="width: 100%; padding: 8px; box-sizing: border-box;">
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Início Tarde:</label>
+                                <input type="datetime-local" id="time-start-tarde" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Final Tarde (Encerramento da O.S.):</label>
+                                <input type="datetime-local" id="time-end-tarde" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
                         </div>
                     </div>
 
@@ -107,7 +122,7 @@
                         <textarea id="description" rows="4" style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
                     </div>
 
-                    <!-- Condição de Pagamento (Novo Campo) -->
+                    <!-- Condição de Pagamento -->
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">Condição de Pagamento (Dias):</label>
                         <input type="text" id="payment-terms" placeholder="Ex: 30" required style="width: 100%; padding: 8px; box-sizing: border-box;">
