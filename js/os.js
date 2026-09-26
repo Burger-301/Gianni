@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/
 const clientSelect = document.getElementById('client-select');
 const form = document.getElementById('os-form');
 
-const VALOR_HORA_FIXO = 25.00; 
+const VALOR_HORA_FIXO = 200.00; 
 
 function ajustarCanvas(canvas) {
     if (!canvas) return;
@@ -55,6 +55,36 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
+// Função de cálculo de minutos somando os turnos de manhã e tarde
+function calcularMinutosTrabalhados(startM, endM, startT, endT) {
+    let minutosTotais = 0;
+
+    if (startM && endM) {
+        const diffM = new Date(endM) - new Date(startM);
+        if (diffM > 0) minutosTotais += diffM / (1000 * 60);
+    }
+
+    if (startT && endT) {
+        const diffT = new Date(endT) - new Date(startT);
+        if (diffT > 0) minutosTotais += diffT / (1000 * 60);
+    }
+
+    if (minutosTotais < 0) minutosTotais = 0;
+
+    const horasDecimais = minutosTotais / 60;
+    const valorDasHoras = horasDecimais * VALOR_HORA_FIXO;
+
+    const horasExatas = Math.floor(minutosTotais / 60);
+    const minutosRestantes = minutosTotais % 60;
+    const formatadoTexto = `${horasExatas}h ${minutosRestantes}m`;
+
+    return {
+        totalHours: horasDecimais.toFixed(2),
+        totalHoursText: formatadoTexto,
+        totalValue: valorDasHoras.toFixed(2)
+    };
+}
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -65,21 +95,12 @@ form.addEventListener('submit', async (e) => {
 
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
-    const timeStartStr = document.getElementById('time-start').value;
-    const timeEndStr = document.getElementById('time-end').value;
+    const timeStartManha = document.getElementById('time-start-manha').value;
+    const timeEndManha = document.getElementById('time-end-manha').value;
+    const timeStartTarde = document.getElementById('time-start-tarde').value;
+    const timeEndTarde = document.getElementById('time-end-tarde').value;
 
-    let diffHours = 0;
-    let valorDasHoras = 0;
-
-    if (timeEndStr) {
-        const start = new Date(timeStartStr);
-        const end = new Date(timeEndStr);
-        const diffMs = end - start;
-        diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
-        valorDasHoras = diffHours * VALOR_HORA_FIXO;
-    }
-
-    const totalValue = valorDasHoras;
+    const calc = calcularMinutosTrabalhados(timeStartManha, timeEndManha, timeStartTarde, timeEndTarde);
 
     const osData = {
         clientId: clientSelect.value,
@@ -91,13 +112,17 @@ form.addEventListener('submit', async (e) => {
         serialNumber: document.getElementById('serial-number').value,
         serviceNature: document.getElementById('service-nature').value,
         serviceArea: document.getElementById('service-area').value,
-        timeStart: timeStartStr,
-        timeEnd: timeEndStr || "",
-        totalHours: diffHours.toFixed(2),
+        timeStartManha: timeStartManha || "",
+        timeEndManha: timeEndManha || "",
+        timeStartTarde: timeStartTarde || "",
+        timeEndTarde: timeEndTarde || "",
+        timeEnd: timeEndTarde || "", // Mantém compatibilidade geral para encerramento
+        totalHours: calc.totalHours,
+        totalHoursText: calc.totalHoursText,
         hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
-        totalValue: totalValue.toFixed(2),
+        totalValue: calc.totalValue,
         description: document.getElementById('description').value,
-        paymentTerms: document.getElementById('payment-terms').value, // Condição de Pagamento em dias
+        paymentTerms: document.getElementById('payment-terms').value,
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),
         customerSignature: clientPad.toDataURL(),
