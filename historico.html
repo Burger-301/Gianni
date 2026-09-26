@@ -3,59 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico de Ordens de Serviço</title>
+    <title>Histórico de Serviços - Assistência Técnica</title>
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- Biblioteca jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- Biblioteca EmailJS (Essencial para não travar o script) -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-    <div class="container" style="max-width: 800px; margin: 20px auto; font-family: Arial, sans-serif;">
-        <p><a href="index.html">← Voltar ao Início</a></p>
-        <h2>Histórico de Ordens de Serviço</h2>
+    <div class="app-container">
+        <!-- Menu Lateral (Sidebar) -->
+        <aside class="sidebar">
+            <h2>Assistência Técnica</h2>
+            <nav>
+                <a href="index.html">🏠 Início</a>
+                <a href="clientes.html">👥 Gestão de Clientes</a>
+                <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
+                <a href="historico.html" class="active">📜 Histórico</a>
+                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+            </nav>
+        </aside>
 
-        <!-- Secção de Filtros -->
-        <div style="background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3>Filtrar Histórico</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Botão de menu para telemóveis -->
+            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
+
+            <div class="container" style="max-width: 800px;">
+                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
                 
-                <!-- Filtro por Cliente -->
-                <div style="flex: 1; min-width: 200px;">
-                    <label><strong>Cliente:</strong></label><br>
-                    <select id="filtro-cliente" style="width: 100%; padding: 6px; margin-top: 4px;">
-                        <option value="">Todos os clientes</option>
-                    </select>
+                <h2>Histórico de Ordens de Serviço</h2>
+                
+                <!-- Secção de Filtros (Intervalo de tempo e cliente) -->
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                    <h3 style="font-size: 16px; margin-top: 0;">Filtros de Pesquisa</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="font-size: 14px;">Cliente:</label>
+                            <select id="filter-client">
+                                <option value="">Todos os clientes</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 140px;">
+                            <label style="font-size: 14px;">Data Início:</label>
+                            <input type="date" id="filter-start">
+                        </div>
+                        <div style="flex: 1; min-width: 140px;">
+                            <label style="font-size: 14px;">Data Fim:</label>
+                            <input type="date" id="filter-end">
+                        </div>
+                    </div>
+                    <button type="button" id="apply-filters" style="margin-top: 15px; width: auto; padding: 8px 16px;">Aplicar Filtros</button>
                 </div>
 
-                <!-- Data Inicial -->
-                <div style="flex: 1; min-width: 150px;">
-                    <label><strong>Data Inicial:</strong></label><br>
-                    <input type="date" id="filtro-data-inicio" style="width: 100%; padding: 6px; margin-top: 4px;">
-                </div>
-
-                <!-- Data Final -->
-                <div style="flex: 1; min-width: 150px;">
-                    <label><strong>Data Final:</strong></label><br>
-                    <input type="date" id="filtro-data-fim" style="width: 100%; padding: 6px; margin-top: 4px;">
-                </div>
-
-                <!-- Botões de Ação -->
-                <div>
-                    <button id="btn-filtrar" style="background: #007bff; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Filtrar</button>
-                    <button id="btn-limpar" style="background: #6c757d; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; margin-left: 5px;">Limpar</button>
+                <!-- Lista de Serviços -->
+                <div style="margin-top: 25px;">
+                    <div id="history-list">
+                        <p style="color: #666;">A carregar histórico...</p>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Onde a lista de ordens vai aparecer dinamicamente -->
-        <div id="history-list">A carregar histórico...</div>
-
+        </main>
     </div>
 
-    <!-- Script de lógica do histórico -->
-    <script type="module" src="js/relatorio.js"></script>
+    <!-- Script de Gestão, Menu e Autenticação -->
+    <script type="module">
+        import { auth } from './js/firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = 'login.html';
+        });
+
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'login.html';
+        });
+    </script>
 </body>
 </html>
