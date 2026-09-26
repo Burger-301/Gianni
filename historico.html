@@ -499,7 +499,7 @@
 
                 y += 24;
 
-                // Horário formatado no padrão solicitados (dd/mm/aaaa às hh:mm)
+                // Horário formatado
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -569,7 +569,7 @@
                 docPDF.line(120, y + 15, 190, y + 15);
 
                 docPDF.setFontSize(8);
-                docPDF.text("NOME CLIENTE / RESPONSÁVEL", 35, y + 20);
+                docPDF.text("ASSINATURA DO CLIENTE", 38, y + 20);
                 docPDF.text("ASSINATURA TÉCNICO RESPONSÁVEL", 128, y + 20);
 
                 if (order.technicianSignature) {
