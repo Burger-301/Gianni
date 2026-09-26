@@ -76,14 +76,17 @@ form.addEventListener('submit', async (e) => {
     const timeEndStr = document.getElementById('time-end').value;
     const laborValueManual = parseFloat(document.getElementById('labor-value').value) || 0;
 
-    // Calcular a diferença de tempo em horas
-    const start = new Date(timeStartStr);
-    const end = new Date(timeEndStr);
-    const diffMs = end - start;
-    const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
-    
-    // Cálculo automático do valor das horas com base na taxa fixa
-    const valorDasHoras = diffHours * VALOR_HORA_FIXO;
+    let diffHours = 0;
+    let valorDasHoras = 0;
+
+    // Calcular horas apenas se a hora final foi preenchida
+    if (timeEndStr) {
+        const start = new Date(timeStartStr);
+        const end = new Date(timeEndStr);
+        const diffMs = end - start;
+        diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
+        valorDasHoras = diffHours * VALOR_HORA_FIXO;
+    }
 
     // Soma total (Valor das horas automáticas + Mão de obra manual)
     const totalValue = valorDasHoras + laborValueManual;
@@ -99,16 +102,16 @@ form.addEventListener('submit', async (e) => {
         serviceNature: document.getElementById('service-nature').value,
         serviceArea: document.getElementById('service-area').value,
         timeStart: timeStartStr,
-        timeEnd: timeEndStr,
+        timeEnd: timeEndStr || "", // Permite ficar vazio se recolhido no cliente
         totalHours: diffHours.toFixed(2),
         hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
         valorDasHoras: valorDasHoras.toFixed(2),
         laborValueManual: laborValueManual.toFixed(2),
-        totalValue: totalValue.toFixed(2), // Valor total somado
+        totalValue: totalValue.toFixed(2),
         description: document.getElementById('description').value,
         technicianName: document.getElementById('technician-name').value,
-        technicianSignature: techPad.toDataURL(),       // Imagem da assinatura em Base64
-        customerSignature: clientPad.toDataURL(),     // Imagem da assinatura em Base64
+        technicianSignature: techPad.toDataURL(),
+        customerSignature: clientPad.toDataURL(),
         createdAt: new Date()
     };
 
