@@ -89,11 +89,11 @@
         </main>
     </div>
 
-    <!-- Modal Personalizado para Selecionar Data e Hora de Regresso -->
+    <!-- Modal Personalizado para Selecionar Data e Hora de Fim -->
     <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
         <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Registar Hora de Regresso</h3>
-            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Selecione a data e hora de chegada a casa/base:</p>
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Registar Data e Hora de Fim</h3>
+            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Selecione a data e hora de conclusão:</p>
             
             <input type="datetime-local" id="input-nova-hora" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 20px;">
             
@@ -110,12 +110,10 @@
         import { collection, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Verifica Autenticação
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = 'login.html';
         });
 
-        // Controlo do Menu Mobile
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.querySelector('.sidebar');
         if (menuToggle) {
@@ -134,7 +132,6 @@
         let clientsMap = {};
         let activeOsIdForHoraFim = null;
 
-        // Função auxiliar para converter a imagem local do logótipo em Base64 para o jsPDF
         async function getBase64ImageFromUrl(imageUrl) {
             try {
                 const response = await fetch(imageUrl);
@@ -151,7 +148,6 @@
             }
         }
 
-        // Carregar Clientes para preencher o select do filtro e mapa de dados
         async function loadClientsFilter() {
             try {
                 const querySnapshot = await getDocs(collection(db, "clients"));
@@ -169,7 +165,6 @@
             }
         }
 
-        // Carregar Histórico do Firestore (Mais recente no topo)
         async function loadHistory() {
             const historyListDiv = document.getElementById('history-list');
             try {
@@ -188,7 +183,6 @@
             }
         }
 
-        // Renderizar a lista de ordens de serviço no ecrã com valores e botões
         function renderHistory(orders) {
             const historyListDiv = document.getElementById('history-list');
             historyListDiv.innerHTML = "";
@@ -205,7 +199,7 @@
                 const dataInicioFormatada = order.timeStart ? new Date(order.timeStart).toLocaleString('pt-PT') : 'N/A';
                 
                 const temHoraFim = order.timeEnd && order.timeEnd !== "";
-                const dataFimFormatada = temHoraFim ? new Date(order.timeEnd).toLocaleString('pt-PT') : '<span style="color: #d9534f; font-weight: bold;">Pendente de regresso</span>';
+                const dataFimFormatada = temHoraFim ? new Date(order.timeEnd).toLocaleString('pt-PT') : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -213,12 +207,11 @@
                             <strong style="font-size: 16px; color: #2c3e50;">${clientName}</strong>
                             <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
                         </div>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Fim/Regresso:</strong> ${dataFimFormatada}</p>
+                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'}, Matrícula/Série: ${order.serialNumber || '-'})</p>
+                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Fim:</strong> ${dataFimFormatada}</p>
                         
-                        <!-- Resumo Financeiro na Listagem (Em Reais R$) -->
                         <p style="margin: 4px 0; font-size: 13px; color: #444;">
-                            <strong>Horas:</strong> ${order.totalHours || '0'}h | <strong>Mão de Obra:</strong> R$ ${order.laborValueManual || '0.00'}
+                            <strong>Horas:</strong> ${order.totalHours || '0'}h
                         </p>
                         <p style="margin: 4px 0; font-size: 14px;">
                             <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">R$ ${order.totalValue || '0.00'}</span>
@@ -226,13 +219,12 @@
 
                         <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
 
-                        <!-- Botões de Ação -->
                         <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
                             <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
                                 📄 Gerar Relatório Modelo RG
                             </button>
                             <button onclick="adicionarHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                ⏱️ ${temHoraFim ? 'Editar Hora Regresso' : 'Adicionar Hora Regresso (Casa)'}
+                                ⏱️ ${temHoraFim ? 'Editar Data/Hora Fim' : 'Adicionar Data/Hora Fim'}
                             </button>
                         </div>
                     </div>
@@ -241,10 +233,8 @@
             historyListDiv.innerHTML = html;
         }
 
-        // Função global para abrir o modal de seleção da hora de regresso
         window.adicionarHoraFim = function(osId) {
             activeOsIdForHoraFim = osId;
-            
             const agora = new Date();
             const ano = agora.getFullYear();
             const mes = String(agora.getMonth() + 1).padStart(2, '0');
@@ -279,28 +269,25 @@
             
             const VALOR_HORA_FIXO = 25.00; 
             const valorDasHoras = diffHours * VALOR_HORA_FIXO;
-            const laborManual = parseFloat(order.laborValueManual) || 0;
-            const totalValue = valorDasHoras + laborManual;
+            const totalValue = valorDasHoras;
 
             try {
                 const docRef = doc(db, "service_orders", osId);
                 await updateDoc(docRef, {
                     timeEnd: novaHora,
                     totalHours: diffHours.toFixed(2),
-                    valorDasHoras: valorDasHoras.toFixed(2),
                     totalValue: totalValue.toFixed(2)
                 });
 
                 document.getElementById('modal-hora-fim').style.display = 'none';
-                alert("Hora de regresso e valores atualizados com sucesso!");
+                alert("Data/Hora de fim e valores atualizados com sucesso!");
                 loadHistory();
             } catch (error) {
-                console.error("Erro ao atualizar hora final:", error);
+                console.error("Erro ao atualizar data/hora final:", error);
                 alert("Ocorreu um erro ao atualizar os dados.");
             }
         });
 
-        // Função global para gerar o PDF com o Logótipo e Reais (R$)
         window.gerarEPartilharPDF = async function(osId) {
             try {
                 const order = allOrders.find(item => item.id === osId);
@@ -373,7 +360,7 @@
 
                 y += 24;
 
-                // Horário
+                // Horário (Atualizado com os novos rótulos)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -381,12 +368,12 @@
 
                 y += 7;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`Data e hora de chegada: ${order.timeStart || 'N/A'}`, 22, y + 5);
-                docPDF.text(`Data e hora de saída (Regresso): ${order.timeEnd || 'Pendente'}`, 105, y + 5);
+                docPDF.text(`Data e hora de início: ${order.timeStart || 'N/A'}`, 22, y + 5);
+                docPDF.text(`Data e hora de fim: ${order.timeEnd || 'Pendente'}`, 105, y + 5);
 
                 y += 15;
 
-                // EQUIPAMENTO (NOVA SECÇÃO SEPARADA)
+                // EQUIPAMENTO (Com Matrícula / N° de Série)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -396,10 +383,12 @@
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`Equipamento: ${order.equipment || 'N/A'}`, 22, y + 5);
                 docPDF.text(`Marca: ${order.brand || '-'} | Modelo: ${order.model || '-'}`, 105, y + 5);
+                y += 6;
+                docPDF.text(`Matrícula / N° de Série: ${order.serialNumber || '-'}`, 22, y + 5);
 
                 y += 15;
 
-                // SERVIÇOS REALIZADOS (APENAS TIPO E DESCRIÇÃO)
+                // SERVIÇOS REALIZADOS (Apenas Tipo e Descrição)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -413,7 +402,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // VALOR TOTAL (ALTERADO PARA "TOTAL")
+                // VALOR TOTAL (Sem Mão de Obra manual)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -422,11 +411,10 @@
                 y += 8;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h`, 22, y + 4);
-                docPDF.text(`• Mão de Obra: R$ ${order.laborValueManual || '0.00'}`, 22, y + 10);
                 docPDF.setFont("helvetica", "bold");
-                docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 18);
+                docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
 
-                y += 28;
+                y += 22;
 
                 // Assinaturas
                 docPDF.setLineWidth(0.2);
@@ -477,7 +465,6 @@
             }
         };
 
-        // Lógica de Filtro Dinâmico
         document.getElementById('apply-filters').addEventListener('click', () => {
             const selectedClient = document.getElementById('filter-client').value;
             const selectedType = document.getElementById('filter-type').value;
