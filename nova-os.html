@@ -1,119 +1,105 @@
-import { db } from './firebase-config.js';
-import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Ordem de Serviço</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Biblioteca de assinaturas digitais -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+    <div class="container" style="max-width: 700px; margin: 20px auto; font-family: Arial, sans-serif;">
+        <p><a href="index.html">← Voltar ao Início</a></p>
+        <h2>Registar Nova Ordem de Serviço (O.S.)</h2>
 
-// 1. Inicializar os Signature Pads para as assinaturas
-const techCanvas = document.getElementById('tech-pad');
-const clientCanvas = document.getElementById('client-pad');
-
-const techSignaturePad = new SignaturePad(techCanvas);
-const clientSignaturePad = new SignaturePad(clientCanvas);
-
-// Botões para limpar as assinaturas
-document.getElementById('clear-tech').addEventListener('click', () => techSignaturePad.clear());
-document.getElementById('clear-client').addEventListener('click', () => clientSignaturePad.clear());
-
-// 2. Função para carregar os clientes registados para dentro do <select>
-async function carregarClientesNoDropdown() {
-    const selectElement = document.getElementById('client-select');
-    if (!selectElement) return;
-
-    try {
-        const querySnapshot = await getDocs(collection(db, "clients"));
-        
-        selectElement.innerHTML = '<option value="">Selecione um cliente...</option>';
-
-        if (querySnapshot.empty) {
-            selectElement.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
-            return;
-        }
-
-        querySnapshot.forEach((doc) => {
-            const client = doc.data();
-            const clientId = doc.id;
-
-            const option = document.createElement('option');
-            option.value = clientId;
-            option.dataset.clientName = client.name || client.razaoSocial || 'Cliente sem nome';
-            option.dataset.clientEmail = client.email || '';
+        <form id="os-form" style="background: #f4f4f4; padding: 20px; border-radius: 8px;">
             
-            option.textContent = `${client.name || client.razaoSocial} (Doc: ${client.document || client.cnpj || 'N/A'})`;
-            selectElement.appendChild(option);
-        });
+            <!-- Seleção do Cliente (O JavaScript vai preencher isto automaticamente) -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Cliente:</strong></label><br>
+                <select id="client-select" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                    <option value="">A carregar clientes...</option>
+                </select>
+            </div>
 
-    } catch (error) {
-        console.error("Erro ao carregar clientes:", error);
-        selectElement.innerHTML = '<option value=""></option>';
-    }
-}
+            <!-- Dados do Equipamento e Serviço -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Equipamento / Descrição do Ativo:</strong></label><br>
+                <input type="text" id="equipment" placeholder="Ex: Gerador / Máquina X" required style="width: 100%; padding: 8px; margin-top: 5px;">
+            </div>
 
-// Executar ao abrir a página
-carregarClientesNoDropdown();
+            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label><strong>Tipo de Manutenção:</strong></label><br>
+                    <select id="service-nature" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="Corretiva">Corretiva</option>
+                        <option value="Preventiva">Preventiva</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label><strong>Área:</strong></label><br>
+                    <select id="service-area" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="Eletrica">Elétrica</option>
+                        <option value="Mecanica">Mecânica</option>
+                    </select>
+                </div>
+            </div>
 
-// 3. Submissão do Formulário de Ordem de Serviço
-const formOS = document.getElementById('os-form');
-if (formOS) {
-    formOS.addEventListener('submit', async (e) => {
-        e.preventDefault();
+            <!-- Controlo de Tempos -->
+            <fieldset style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <legend><strong>Controlo de Tempos</strong></legend>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label>Início:</label>
+                        <input type="datetime-local" id="time-start" required style="width: 100%; padding: 6px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Fim do Serviço:</label>
+                        <input type="datetime-local" id="time-end" required style="width: 100%; padding: 6px;">
+                    </div>
+                </div>
+                <div>
+                    <label>Regresso à Base:</label>
+                    <input type="datetime-local" id="time-base" required style="width: 100%; padding: 6px;">
+                </div>
+            </fieldset>
 
-        const selectElement = document.getElementById('client-select');
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
+            <!-- Relatório Escrito -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Relatório Escrito (Descrição do Trabalho Executado):</strong></label><br>
+                <textarea id="description" rows="4" placeholder="Descreva detalhadamente o serviço realizado..." required style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+            </div>
 
-        const clientId = selectElement.value;
-        const clientName = selectedOption.dataset.clientName;
-        const clientEmail = selectedOption.dataset.clientEmail;
+            <!-- Nome do Manutentor -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Manutentor Responsável:</strong></label><br>
+                <input type="text" id="technician-name" placeholder="O teu nome" required style="width: 100%; padding: 8px; margin-top: 5px;">
+            </div>
 
-        const equipment = document.getElementById('equipment').value;
-        const serviceNature = document.getElementById('service-nature').value; // Corretiva / Preventiva
-        const serviceArea = document.getElementById('service-area').value;       // Eletrica / Mecanica
-        const description = document.getElementById('description').value;
-        const technicianName = document.getElementById('technician-name').value;
-        
-        const startTime = document.getElementById('time-start').value;
-        const endTime = document.getElementById('time-end').value;
-        const returnBase = document.getElementById('time-base').value;
+            <!-- Assinatura do Manutentor -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Assinatura do Manutentor:</strong></label><br>
+                <div style="background: white; border: 1px solid #ccc; display: inline-block; margin-top: 5px;">
+                    <canvas id="tech-pad" width="300" height="150" style="touch-action: none;"></canvas>
+                </div>
+                <div><button type="button" id="clear-tech" style="padding: 4px 8px; font-size: 12px; cursor: pointer;">Limpar Assinatura</button></div>
+            </div>
 
-        // Validar se as assinaturas foram preenchidas
-        if (techSignaturePad.isEmpty()) {
-            alert("Por favor, adicione a assinatura do manutentor.");
-            return;
-        }
-        if (clientSignaturePad.isEmpty()) {
-            alert("Por favor, adicione a assinatura do cliente.");
-            return;
-        }
+            <!-- Assinatura do Cliente -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Assinatura do Cliente Responsável:</strong></label><br>
+                <div style="background: white; border: 1px solid #ccc; display: inline-block; margin-top: 5px;">
+                    <canvas id="client-pad" width="300" height="150" style="touch-action: none;"></canvas>
+                </div>
+                <div><button type="button" id="clear-client" style="padding: 4px 8px; font-size: 12px; cursor: pointer;">Limpar Assinatura</button></div>
+            </div>
 
-        // Converter assinaturas para imagem (Base64)
-        const technicianSignature = techSignaturePad.toDataURL();
-        const customerSignature = clientSignaturePad.toDataURL();
+            <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; width: 100%;">Finalizar e Guardar O.S.</button>
+        </form>
+    </div>
 
-        try {
-            await addDoc(collection(db, "service_orders"), {
-                clientId,
-                clientName,
-                clientEmail,
-                equipment,
-                serviceType: `${serviceNature} - ${serviceArea}`,
-                description,
-                technicianName,
-                startTime,
-                endTime,
-                returnBase,
-                technicianSignature,
-                customerSignature,
-                createdAt: new Date()
-            });
-
-            alert("Ordem de Serviço criada e guardada com sucesso!");
-            formOS.reset();
-            techSignaturePad.clear();
-            clientSignaturePad.clear();
-            
-            // Opcional: Redirecionar para o histórico
-            window.location.href = "historico.html";
-
-        } catch (error) {
-            console.error("Erro ao guardar O.S.:", error);
-            alert("Erro ao salvar a Ordem de Serviço no Firebase.");
-        }
-    });
-}
+    <!-- Script de ligação -->
+    <script type="module" src="js/os.js"></script>
+</body>
+</html>
