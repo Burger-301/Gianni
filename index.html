@@ -4,62 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assistência Técnica - Início</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        h1 { color: #333; font-size: 22px; margin-bottom: 10px; }
-        p { color: #666; margin-bottom: 20px; }
-        nav ul { list-style: none; padding: 0; }
-        nav li { margin-bottom: 10px; }
-        nav a {
-            display: block;
-            background: #007BFF;
-            color: white;
-            text-decoration: none;
-            padding: 10px;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
-        nav a:hover { background: #0056b3; }
-    </style>
-    <!-- Biblioteca jsPDF para gerar o PDF no navegador -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Assistência Técnica</h1>
-        <p>Painel de Controlo Principal</p>
-        
-        <nav>
-            <ul>
-                <li><a href="clientes.html">Gestão de Clientes</a></li>
-                <li><a href="nova-os.html">Nova Ordem de Serviço (O.S.)</a></li>
-                <li><a href="historico.html">Histórico de Serviços</a></li>
-            </ul>
-        </nav>
+    <div class="app-container">
+        <!-- Menu Lateral (Sidebar) Estilo Painel -->
+        <aside class="sidebar">
+            <h2>Assistência Técnica</h2>
+            <nav>
+                <a href="index.html" class="active">🏠 Início</a>
+                <a href="clientes.html">👥 Gestão de Clientes</a>
+                <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
+                <a href="historico.html">📜 Histórico</a>
+                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px;">
+                <h1 style="color: #333; font-size: 22px; margin-bottom: 10px;">Painel de Controlo Principal</h1>
+                <p style="color: #666; margin-bottom: 20px;">Bem-vindo ao sistema de assistência técnica. Utilize o menu lateral para navegar entre a gestão de clientes, abertura de novas ordens de serviço e consulta de histórico.</p>
+            </div>
+        </main>
     </div>
 
-    <!-- Script de teste para verificar ligação ao Firebase -->
+    <!-- Script de Autenticação e Proteção de Sessão -->
     <script type="module">
-        import { db } from './js/firebase-config.js';
-        console.log("Firebase ligado com sucesso!", db);
+        import { auth } from './js/firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Verifica se o utilizador está autenticado
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Botão para Terminar Sessão
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await signOut(auth);
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error("Erro ao terminar sessão:", error);
+            }
+        });
     </script>
 </body>
 </html>
