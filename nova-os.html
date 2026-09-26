@@ -41,18 +41,36 @@
                         </select>
                     </div>
 
-                    <!-- Dados do Equipamento e Serviço -->
+                    <!-- Dados do Equipamento -->
                     <div>
                         <label><strong>Equipamento / Descrição do Ativo:</strong></label>
                         <input type="text" id="equipment" placeholder="Ex: Gerador / Máquina X" required>
                     </div>
 
+                    <!-- Marca, Matrícula e Modelo (Organizados em grelha adaptável) -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 120px;">
+                            <label style="font-size: 14px;"><strong>Marca:</strong></label>
+                            <input type="text" id="brand" placeholder="Ex: Makita">
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label style="font-size: 14px;"><strong>Matrícula:</strong></label>
+                            <input type="text" id="serial-number" placeholder="Nº de Série">
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label style="font-size: 14px;"><strong>Modelo:</strong></label>
+                            <input type="text" id="model" placeholder="Ex: XYZ-200">
+                        </div>
+                    </div>
+
+                    <!-- Tipo de Manutenção e Área -->
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;">
                             <label><strong>Tipo de Manutenção:</strong></label>
                             <select id="service-nature">
                                 <option value="Corretiva">Corretiva</option>
                                 <option value="Preventiva">Preventiva</option>
+                                <option value="Garantia">Garantia</option>
                             </select>
                         </div>
                         <div style="flex: 1;">
@@ -64,22 +82,18 @@
                         </div>
                     </div>
 
-                    <!-- Controlo de Tempos -->
-                    <fieldset style="padding: 15px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
-                        <legend><strong>Controlo de Tempos</strong></legend>
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <div style="flex: 1;">
-                                <label style="font-size: 14px;">Início:</label>
-                                <input type="datetime-local" id="time-start" required>
+                    <!-- Controlo de Tempos (Estética limpa sem regresso à base) -->
+                    <fieldset style="padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin: 0; background: #fafafa;">
+                        <legend style="padding: 0 5px; font-weight: bold; color: #2c3e50;">Controlo de Tempos</legend>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 14px; color: #555;">Início do Serviço:</label>
+                                <input type="datetime-local" id="time-start" required style="margin-top: 5px;">
                             </div>
-                            <div style="flex: 1;">
-                                <label style="font-size: 14px;">Fim do Serviço:</label>
-                                <input type="datetime-local" id="time-end" required>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 14px; color: #555;">Fim do Serviço:</label>
+                                <input type="datetime-local" id="time-end" required style="margin-top: 5px;">
                             </div>
-                        </div>
-                        <div>
-                            <label style="font-size: 14px;">Regresso à Base:</label>
-                            <input type="datetime-local" id="time-base" required>
                         </div>
                     </fieldset>
 
@@ -120,12 +134,10 @@
         import { auth } from './js/firebase-config.js';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Verifica autenticação
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = 'login.html';
         });
 
-        // Controlo do Menu Mobile
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.querySelector('.sidebar');
         if (menuToggle) {
@@ -134,7 +146,6 @@
             });
         }
 
-        // Terminar Sessão
         document.getElementById('btn-logout').addEventListener('click', async (e) => {
             e.preventDefault();
             await signOut(auth);
@@ -142,7 +153,7 @@
         });
     </script>
 
-    <!-- Script específico da O.S. (Lógica do Firestore e SignaturePad) -->
+    <!-- Script específico da O.S. -->
     <script type="module" src="js/os.js"></script>
 </body>
 </html>
