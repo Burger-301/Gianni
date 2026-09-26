@@ -8,6 +8,23 @@ const btnFilter = document.getElementById('btn-filter');
 let allOrders = [];
 let clientsMap = {};
 
+// Função auxiliar para converter a imagem local em Base64 para o jsPDF
+async function getBase64ImageFromUrl(imageUrl) {
+    try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        console.warn("Não foi possível carregar o logótipo:", e);
+        return null;
+    }
+}
+
 // Carregar mapa de clientes para obter dados completos (razao social, cnpj, endereco)
 async function carregarClientesMapa() {
     try {
@@ -86,7 +103,7 @@ async function loadHistory(startDate = null, endDate = null) {
     }
 }
 
-// Função global para gerar o PDF no formato padrão RG Soluções Técnicas e abrir partilha nativa
+// Função global para gerar o PDF com o Logótipo e formato padrão RG Soluções Técnicas
 window.gerarEPartilharPDF = async function(osId) {
     try {
         const os = allOrders.find(item => item.id === osId);
@@ -109,18 +126,24 @@ window.gerarEPartilharPDF = async function(osId) {
 
         const dataEmissao = new Date().toLocaleDateString('pt-BR');
 
-        // CABEÇALHO DO RELATÓRIO
+        // Tentar carregar e inserir o logótipo no canto superior esquerdo
+        const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
+        if (logoBase64) {
+            // X: 20, Y: 10, Largura: 32, Altura: 14 (ajusta conforme proporção do teu logo)
+            docPDF.addImage(logoBase64, 'PNG', 20, 10, 32, 14);
+        }
+
+        // CABEÇALHO DO RELATÓRIO (Ao lado do logo)
         docPDF.setFont("helvetica", "bold");
-        docPDF.setFontSize(14);
-        docPDF.text("RG SOLUÇÕES TÉCNICAS", 20, 15);
+        docPDF.setFontSize(13);
+        docPDF.text("Orçamento / Manutenção Técnica", 58, 15);
         
-        docPDF.setFontSize(10);
+        docPDF.setFontSize(9);
         docPDF.setFont("helvetica", "normal");
-        docPDF.text("Relatório de Assistência Técnica / Manutenção", 20, 21);
-        docPDF.text(`Em: ${dataEmissao}`, 150, 21);
+        docPDF.text(`Em: ${dataEmissao}`, 155, 15);
 
         docPDF.setLineWidth(0.4);
-        docPDF.line(20, 25, 190, 25);
+        docPDF.line(20, 27, 190, 27);
 
         let y = 33;
 
@@ -242,7 +265,7 @@ window.gerarEPartilharPDF = async function(osId) {
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
-        alert("Relatório PDF gerado no padrão RG Soluções Técnicas com sucesso!");
+        alert("Relatório PDF gerado com o logótipo e padrão RG Soluções com sucesso!");
 
     } catch (error) {
         console.error("Erro ao gerar o relatório PDF:", error);
