@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // As tuas credenciais reais do Firebase
 const firebaseConfig = {
@@ -12,6 +13,7 @@ const firebaseConfig = {
   appId: "1:490260790735:web:30d15466c494f4a63f26ba"
 };
 
-// Inicializa o Firebase e o Firestore
+// Inicializa o Firebase, o Firestore e o Storage
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
