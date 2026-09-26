@@ -5,15 +5,14 @@ body {
     color: #333;
     margin: 0;
     padding: 0;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
 }
 
-/* Layout Principal com Menu Lateral (Sidebar) */
+/* Layout Principal com Menu Lateral (Sidebar) Fixo */
 .app-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
+    display: block;
+    min-height: 100vh;
+    width: 100%;
 }
 
 .sidebar {
@@ -24,9 +23,13 @@ body {
     flex-direction: column;
     padding: 20px;
     box-sizing: border-box;
-    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
     transition: left 0.3s ease;
     z-index: 1000;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
 }
 
 .sidebar h2 {
@@ -83,13 +86,13 @@ body {
     background-color: #c82333;
 }
 
+/* Conteúdo Principal com margem lateral para compensar a sidebar no PC */
 .main-content {
-    flex: 1;
+    margin-left: 260px;
     padding: 30px;
-    overflow-y: auto;
     background-color: #f4f7f6;
     box-sizing: border-box;
-    position: relative;
+    min-height: 100vh;
 }
 
 /* Botão de Menu para Telemóvel (Hambúrguer) */
@@ -107,7 +110,7 @@ body {
 
 /* Containers de Conteúdo Individual */
 .container {
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
     background: #ffffff;
     padding: 25px;
@@ -183,33 +186,19 @@ canvas {
     box-sizing: border-box;
 }
 
-/* Responsividade para Telemóveis / Ecrãs Pequenos */
+/* Responsividade para Telemóveis / Ecrãs Pequenos (<= 768px) */
 @media (max-width: 768px) {
-    body {
-        overflow: auto;
-        height: auto;
-    }
-    .app-container {
-        flex-direction: column;
-        height: auto;
-    }
     .sidebar {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        height: 100%;
-        width: 260px;
-        z-index: 1000;
-        box-shadow: 4px 0 10px rgba(0,0,0,0.3);
+        left: -260px; /* Esconde a sidebar fora do ecrã por padrão no mobile */
     }
     .sidebar.active {
-        left: 0;
+        left: 0; /* Mostra a sidebar quando ativada */
+    }
+    .main-content {
+        margin-left: 0; /* O conteúdo ocupa toda a largura no telemóvel */
+        padding: 15px;
     }
     .menu-toggle {
         display: inline-block;
-    }
-    .main-content {
-        padding: 15px;
-        overflow-y: visible;
     }
 }
