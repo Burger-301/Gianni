@@ -23,14 +23,17 @@
 
         <!-- Conteúdo Principal -->
         <main class="main-content">
-            <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px;">
+            <!-- Botão do menu para telemóveis (visível apenas em ecrãs pequenos) -->
+            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
+
+            <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin-top: 10px;">
                 <h1 style="color: #333; font-size: 22px; margin-bottom: 10px;">Painel de Controlo Principal</h1>
                 <p style="color: #666; margin-bottom: 20px;">Bem-vindo ao sistema de assistência técnica. Utilize o menu lateral para navegar entre a gestão de clientes, abertura de novas ordens de serviço e consulta de histórico.</p>
             </div>
         </main>
     </div>
 
-    <!-- Script de Autenticação e Proteção de Sessão -->
+    <!-- Script de Autenticação, Proteção e Controlo do Menu Mobile -->
     <script type="module">
         import { auth } from './js/firebase-config.js';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -41,6 +44,15 @@
                 window.location.href = 'login.html';
             }
         });
+
+        // Controlo do Menu Mobile (Abre/Fecha a sidebar lateral)
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
 
         // Botão para Terminar Sessão
         document.getElementById('btn-logout').addEventListener('click', async (e) => {
