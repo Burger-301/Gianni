@@ -1,11 +1,160 @@
-<aside class="sidebar">
-    <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
-        <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Clientes - RG Soluções Técnicas</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Menu Lateral (Sidebar) com o Logótipo Padronizado -->
+        <aside class="sidebar">
+            <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
+                <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
+            </div>
+            <nav>
+                <a href="historico.html">🏠 Início / Histórico</a>
+                <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
+                <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
+                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Botão de menu hambúrguer para telemóveis -->
+            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
+
+            <div class="container" style="max-width: 800px;">
+                <a href="historico.html" class="voltar">⬅ Voltar ao Histórico</a>
+                
+                <h2>Gestão de Clientes</h2>
+
+                <!-- Formulário para Cadastrar Novo Cliente -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd;">
+                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Novo Cliente</h3>
+                    
+                    <form id="client-form">
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Nome / Razão Social:</label>
+                            <input type="text" id="client-name" required placeholder="Ex: Empresa Exemplo Lda" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">E-mail:</label>
+                                <input type="email" id="client-email" placeholder="exemplo@email.com" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">CPF / CNPJ:</label>
+                                <input type="text" id="client-document" placeholder="00.000.000/0001-00" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Morada / Endereço:</label>
+                            <input type="text" id="client-address" placeholder="Rua, Número, Cidade" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                        </div>
+
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%;">Guardar Cliente</button>
+                    </form>
+                </div>
+
+                <!-- Lista de Clientes Registados -->
+                <div style="margin-top: 30px;">
+                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Clientes Registados</h3>
+                    <div id="clients-list">
+                        <p style="color: #666; text-align: center;">A carregar clientes...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-    <nav>
-        <a href="historico.html">🏠 Início / Histórico</a>
-        <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
-        <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
-        <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
-    </nav>
-</aside>
+
+    <!-- Script de Gestão, Autenticação, Menu e Registo de Clientes -->
+    <script type="module">
+        import { db, auth } from './js/firebase-config.js';
+        import { collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = 'login.html';
+        });
+
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'login.html';
+        });
+
+        const clientForm = document.getElementById('client-form');
+        const clientsListDiv = document.getElementById('clients-list');
+
+        async function loadClients() {
+            try {
+                const q = query(collection(db, "clients"));
+                const querySnapshot = await getDocs(q);
+                
+                clientsListDiv.innerHTML = "";
+                if (querySnapshot.empty) {
+                    clientsListDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum cliente registado.</p>";
+                    return;
+                }
+
+                let html = "";
+                querySnapshot.forEach((docSnap) => {
+                    const client = docSnap.data();
+                    html += `
+                        <div style="background: white; border: 1px solid #ddd; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <strong style="font-size: 15px; color: #2c3e50;">${client.name || client.razaoSocial || 'Sem nome'}</strong><br>
+                            <span style="font-size: 13px; color: #555;"><strong>Documento:</strong> ${client.document || client.cnpj || 'N/A'} | <strong>E-mail:</strong> ${client.email || 'N/A'}</span><br>
+                            <span style="font-size: 13px; color: #666;"><strong>Endereço:</strong> ${client.address || 'N/A'}</span>
+                        </div>
+                    `;
+                });
+                clientsListDiv.innerHTML = html;
+            } catch (error) {
+                console.error("Erro ao carregar clientes:", error);
+                clientsListDiv.innerHTML = "<p style='color: red;'>Erro ao carregar a lista de clientes.</p>";
+            }
+        }
+
+        clientForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('client-name').value;
+            const email = document.getElementById('client-email').value;
+            const documentVal = document.getElementById('client-document').value;
+            const address = document.getElementById('client-address').value;
+
+            try {
+                await addDoc(collection(db, "clients"), {
+                    name: name,
+                    email: email,
+                    document: documentVal,
+                    address: address,
+                    createdAt: new Date()
+                });
+
+                alert("Cliente registado com sucesso!");
+                clientForm.reset();
+                loadClients();
+            } catch (error) {
+                console.error("Erro ao guardar cliente:", error);
+                alert("Ocorreu um erro ao registar o cliente.");
+            }
+        });
+
+        loadClients();
+    </script>
+</body>
+</html>
