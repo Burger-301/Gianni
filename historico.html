@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Histórico de Ordens de Serviço - Assistência Técnica</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Biblioteca jsPDF caso queiras reutilizar a geração de relatório no histórico -->
+    <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -72,7 +72,7 @@
 
                         <!-- Botão Aplicar -->
                         <div>
-                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px;">Filtrar</button>
+                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px; color: white; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
         </main>
     </div>
 
-    <!-- Script de Gestão, Filtros e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -118,23 +118,26 @@
 
         // Carregar Clientes para preencher o select do filtro
         async function loadClientsFilter() {
-            const querySnapshot = await getDocs(collection(db, "clients"));
-            const selectClient = document.getElementById('filter-client');
-            querySnapshot.forEach((docSnap) => {
-                const client = docSnap.data();
-                clientsMap[docSnap.id] = client.name;
-                const option = document.createElement('option');
-                option.value = docSnap.id;
-                option.textContent = client.name;
-                selectClient.appendChild(option);
-            });
+            try {
+                const querySnapshot = await getDocs(collection(db, "clients"));
+                const selectClient = document.getElementById('filter-client');
+                querySnapshot.forEach((docSnap) => {
+                    const client = docSnap.data();
+                    clientsMap[docSnap.id] = client.name || client.razaoSocial;
+                    const option = document.createElement('option');
+                    option.value = docSnap.id;
+                    option.textContent = client.name || client.razaoSocial;
+                    selectClient.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar clientes para o filtro:", error);
+            }
         }
 
         // Carregar Histórico do Firestore (Mais recente no topo)
         async function loadHistory() {
             const historyListDiv = document.getElementById('history-list');
             try {
-                // Ordenação por data de criação descendente (mais recente primeiro)
                 const q = query(collection(db, "service_orders"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 
@@ -150,7 +153,7 @@
             }
         }
 
-        // Renderizar a lista de ordens de serviço no ecrã
+        // Renderizar a lista de ordens de serviço no ecrã com valores e botão de PDF
         function renderHistory(orders) {
             const historyListDiv = document.getElementById('history-list');
             historyListDiv.innerHTML = "";
@@ -173,14 +176,122 @@
                         </div>
                         <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
                         <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Manutentor:</strong> ${order.technicianName || 'N/A'}</p>
-                        <p style="margin: 8px 0 0 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
+                        
+                        <!-- Resumo Financeiro na Listagem -->
+                        <p style="margin: 4px 0; font-size: 13px; color: #444;">
+                            <strong>Horas:</strong> ${order.totalHours || '0'}h (${order.valorDasHoras || '0.00'}€) | <strong>Mão de Obra:</strong> ${order.laborValueManual || '0.00'}€
+                        </p>
+                        <p style="margin: 4px 0; font-size: 14px;">
+                            <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">${order.totalValue || '0.00'}€</span>
+                        </p>
+
+                        <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
+
+                        <!-- Botão para Gerar PDF e Partilhar -->
+                        <div>
+                            <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                                📄 Gerar Relatório e Encaminhar
+                            </button>
+                        </div>
                     </div>
                 `;
             });
             historyListDiv.innerHTML = html;
         }
 
-        // Lógica de Filtro Dinâmico (Omite o que não corresponde aos critérios)
+        // Função global para gerar o PDF e abrir as opções de partilha nativa com o ficheiro anexo
+        window.gerarEPartilharPDF = async function(osId) {
+            try {
+                const order = allOrders.find(item => item.id === osId);
+                if (!order) {
+                    alert("Ordem de Serviço não encontrada!");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const docPDF = new jsPDF();
+
+                // Construção do documento PDF
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(16);
+                docPDF.text("Relatório de Assistência Técnica", 20, 20);
+
+                docPDF.setFontSize(11);
+                docPDF.setFont("helvetica", "normal");
+                const clientNameDisplay = clientsMap[order.clientId] || order.clientName || 'N/A';
+                docPDF.text(`Cliente: ${clientNameDisplay}`, 20, 32);
+                docPDF.text(`Equipamento: ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'} / Mod: ${order.model || '-'})`, 20, 40);
+                docPDF.text(`Tipo de Serviço: ${order.serviceNature || ''} - ${order.serviceArea || ''}`, 20, 48);
+                docPDF.text(`Manutentor: ${order.technicianName || 'N/A'}`, 20, 56);
+                docPDF.text(`Início: ${order.timeStart || '-'} | Fim: ${order.timeEnd || '-'}`, 20, 64);
+                
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Descrição do Serviço:", 20, 76);
+                docPDF.setFont("helvetica", "normal");
+                
+                const splitDescription = docPDF.splitTextToSize(order.description || 'Sem descrição', 170);
+                docPDF.text(splitDescription, 20, 84);
+
+                let posY = 95 + (splitDescription.length * 5);
+
+                // Resumo Financeiro no PDF
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Resumo Financeiro:", 20, posY);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`- Horas Trabalhadas: ${order.totalHours || '0'}h (Valor Horas: ${order.valorDasHoras || '0.00'}€)`, 20, posY + 8);
+                docPDF.text(`- Mão de Obra Manual: ${order.laborValueManual || '0.00'}€`, 20, posY + 16);
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text(`- Valor Total: ${order.totalValue || '0.00'}€`, 20, posY + 24);
+
+                posY += 38;
+
+                // Inserir assinaturas se existirem
+                if (order.technicianSignature) {
+                    docPDF.addImage(order.technicianSignature, 'PNG', 20, posY, 60, 25);
+                    docPDF.text("Assinatura Manutentor", 20, posY + 30);
+                }
+
+                if (order.customerSignature) {
+                    docPDF.addImage(order.customerSignature, 'PNG', 120, posY, 60, 25);
+                    docPDF.text("Assinatura Cliente", 120, posY + 30);
+                }
+
+                // Criar o ficheiro PDF em formato Blob e objeto File
+                const pdfBlob = docPDF.output('blob');
+                const fileName = `Relatorio_OS_${osId.substring(0, 6)}.pdf`;
+                const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                // Tentar partilha nativa do dispositivo (WhatsApp, E-mail, etc.)
+                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Relatório de Assistência Técnica',
+                            text: `Segue o relatório técnico referente ao equipamento ${order.equipment}.`,
+                            files: [pdfFile],
+                        });
+                        return;
+                    } catch (error) {
+                        if (error.name === 'AbortError') return; // Cancelado pelo utilizador
+                    }
+                }
+
+                // Fallback caso o navegador não suporte partilha direta de ficheiros
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pdfUrl;
+                downloadLink.download = fileName;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                alert("Relatório PDF gerado e descarregado com sucesso!");
+
+            } catch (error) {
+                console.error("Erro ao gerar o relatório PDF:", error);
+                alert("Ocorreu um erro ao processar o relatório.");
+            }
+        };
+
+        // Lógica de Filtro Dinâmico
         document.getElementById('apply-filters').addEventListener('click', () => {
             const selectedClient = document.getElementById('filter-client').value;
             const selectedType = document.getElementById('filter-type').value;
@@ -188,17 +299,14 @@
             const endDate = document.getElementById('filter-end').value;
 
             const filtered = allOrders.filter(order => {
-                // Filtro por Cliente
                 if (selectedClient && order.clientId !== selectedClient) {
                     return false;
                 }
-                // Filtro por Tipo de Manutenção
                 if (selectedType && order.serviceNature !== selectedType) {
                     return false;
                 }
-                // Filtro por Intervalo de Tempo (baseado na data de início da O.S.)
                 if (order.timeStart) {
-                    const orderDateStr = order.timeStart.split('T')[0]; // Formato AAAA-MM-DD
+                    const orderDateStr = order.timeStart.split('T')[0];
                     if (startDate && orderDateStr < startDate) {
                         return false;
                     }
