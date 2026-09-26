@@ -25,6 +25,8 @@ body {
     padding: 20px;
     box-sizing: border-box;
     flex-shrink: 0;
+    transition: left 0.3s ease;
+    z-index: 1000;
 }
 
 .sidebar h2 {
@@ -38,6 +40,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex-grow: 1;
 }
 
 .sidebar nav a {
@@ -57,12 +60,49 @@ body {
     color: #fff;
 }
 
+/* Rodapé da Sidebar (Botão Terminar Sessão) */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #4e555b;
+}
+
+.logout-btn {
+    width: 100%;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
 .main-content {
     flex: 1;
     padding: 30px;
     overflow-y: auto;
     background-color: #f4f7f6;
     box-sizing: border-box;
+    position: relative;
+}
+
+/* Botão de Menu para Telemóvel (Hambúrguer) */
+.menu-toggle {
+    display: none;
+    background: #343a40;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
 }
 
 /* Containers de Conteúdo Individual */
@@ -97,7 +137,7 @@ input, select, textarea {
     box-sizing: border-box;
 }
 
-button {
+button:not(.logout-btn):not(.menu-toggle) {
     background-color: #007bff;
     color: white;
     border: none;
@@ -108,7 +148,7 @@ button {
     font-weight: bold;
 }
 
-button:hover {
+button:not(.logout-btn):not(.menu-toggle):hover {
     background-color: #0056b3;
 }
 
@@ -130,26 +170,19 @@ a.voltar {
         height: auto;
     }
     .sidebar {
-        width: 100%;
-        padding: 15px;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
+        position: fixed;
+        top: 0;
+        left: -260px;
+        height: 100%;
+        width: 260px;
+        z-index: 1000;
+        box-shadow: 4px 0 10px rgba(0,0,0,0.3);
     }
-    .sidebar h2 {
-        display: none; /* Oculta o título no telemóvel para poupar espaço */
+    .sidebar.active {
+        left: 0;
     }
-    .sidebar nav {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 5px;
-        width: 100%;
-        justify-content: center;
-    }
-    .sidebar nav a {
-        padding: 8px 10px;
-        font-size: 13px;
-        text-align: center;
+    .menu-toggle {
+        display: inline-block;
     }
     .main-content {
         padding: 15px;
