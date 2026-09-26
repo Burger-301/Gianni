@@ -65,7 +65,7 @@ function renderizarLista(dados) {
                 <strong>Data/Início:</strong> ${os.startTime || 'N/A'}<br><br>
                 
                 <button onclick="gerarEEnviarRelatorio('${os.id}')" style="background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">
-                    📄 Gerar Relatório e Descarregar
+                    📄 Gerar e Partilhar Relatório
                 </button>
             </li>
         `;
@@ -111,7 +111,7 @@ btnLimpar.addEventListener('click', () => {
     renderizarLista(todasAsOrdens);
 });
 
-// 6. Função para gerar o PDF diretamente no dispositivo e abrir partilha/e-mail
+// 6. Função otimizada: Gera o PDF e abre a partilha nativa (WhatsApp/E-mail com o ficheiro anexo)
 async function gerarEEnviarRelatorio(osId) {
     try {
         const docRef = doc(db, "service_orders", osId);
@@ -126,6 +126,7 @@ async function gerarEEnviarRelatorio(osId) {
         const { jsPDF } = window.jspdf;
         const docPDF = new jsPDF();
 
+        // Construção do PDF
         docPDF.setFont("helvetica", "bold");
         docPDF.setFontSize(16);
         docPDF.text("Relatório de Assistência Técnica", 20, 20);
@@ -160,23 +161,37 @@ async function gerarEEnviarRelatorio(osId) {
             docPDF.text("Assinatura Cliente", 120, posY + 30);
         }
 
-        // Criar o PDF em formato Blob e descarregar no dispositivo
+        // Criar o ficheiro PDF em formato Blob e preparar objeto File
         const pdfBlob = docPDF.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const fileName = `Relatorio_OS_${osId}.pdf`;
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
+        // Tentar usar a partilha nativa do dispositivo (abre WhatsApp, E-mail, etc. com o PDF anexo)
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            try {
+                await navigator.share({
+                    title: 'Relatório de Assistência Técnica',
+                    text: `Segue o relatório técnico referente ao equipamento ${data.equipment}.`,
+                    files: [pdfFile],
+                });
+                return; 
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error("Utilizador cancelou ou erro na partilha:", error);
+                } else {
+                    return; 
+                }
+            }
+        }
+
+        // Fallback: Se o browser não suportar partilha direta de ficheiros, faz o download normal
+        const pdfUrl = URL.createObjectURL(pdfBlob);
         const downloadLink = document.createElement('a');
         downloadLink.href = pdfUrl;
-        downloadLink.download = `Relatorio_OS_${osId}.pdf`;
+        downloadLink.download = fileName;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
-
-        // Abrir cliente de e-mail automaticamente com os dados preenchidos
-        const emailCliente = data.clientEmail || ""; 
-        const assunto = encodeURIComponent(`Relatório de Assistência Técnica - O.S. ${osId}`);
-        const corpo = encodeURIComponent(`Olá,\n\nSegue o relatório técnico referente ao equipamento ${data.equipment}.\n\nCumprimentos,\n${data.technicianName || 'Equipa Técnica'}`);
-
-        window.location.href = `mailto:${emailCliente}?subject=${assunto}&body=${corpo}`;
         alert("Relatório gerado e descarregado com sucesso!");
 
     } catch (error) {
