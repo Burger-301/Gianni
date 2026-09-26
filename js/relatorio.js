@@ -82,3 +82,26 @@ async function gerarEEnviarRelatorio(osId) {
 
 // Associar a função ao botão de partilha no histórico/ecrã final
 window.gerarEEnviarRelatorio = gerarEEnviarRelatorio;
+// ... [Código anterior que desenha o PDF e adiciona as assinaturas] ...
+
+// SUBSTITUI A PARTIR DAQUI:
+const pdfBlob = docPDF.output('blob');
+const pdfUrl = URL.createObjectURL(pdfBlob);
+
+// 1. Força o download automático do PDF para o dispositivo
+const downloadLink = document.createElement('a');
+downloadLink.href = pdfUrl;
+downloadLink.download = `Relatorio_OS_${osId}.pdf`;
+document.body.appendChild(downloadLink);
+downloadLink.click();
+document.body.removeChild(downloadLink);
+
+// 2. Prepara os dados para abrir o e-mail automaticamente
+const emailCliente = data.clientEmail || ""; 
+const assunto = encodeURIComponent(`Relatório de Assistência Técnica - O.S. ${osId}`);
+const corpo = encodeURIComponent(`Olá,\n\nSegue em anexo o relatório técnico referente ao equipamento ${data.equipment}.\n\nCumprimentos,\n${data.technicianName || 'Equipa Técnica'}`);
+
+// 3. Abre o cliente de e-mail (Outlook, Gmail, etc.)
+window.location.href = `mailto:${emailCliente}?subject=${assunto}&body=${corpo}`;
+
+alert("Relatório descarregado com sucesso! O seu programa de e-mail foi aberto.");
