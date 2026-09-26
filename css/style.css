@@ -113,6 +113,7 @@ body {
     padding: 25px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
 }
 
 h1, h2 {
@@ -152,11 +153,34 @@ button:not(.logout-btn):not(.menu-toggle):hover {
     background-color: #0056b3;
 }
 
+/* Botão Voltar Moderno e Destacado */
 a.voltar {
-    display: inline-block;
-    margin-bottom: 15px;
-    color: #666;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    color: #007bff;
     text-decoration: none;
+    font-weight: bold;
+    background: #e9ecef;
+    padding: 8px 14px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+a.voltar:hover {
+    background: #dde2e6;
+    color: #0056b3;
+}
+
+/* Estilo e Suporte Tátil para o Canvas de Assinatura */
+canvas {
+    width: 100% !important;
+    height: 180px !important;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    touch-action: none;
+    box-sizing: border-box;
 }
 
 /* Responsividade para Telemóveis / Ecrãs Pequenos */
