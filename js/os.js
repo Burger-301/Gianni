@@ -70,3 +70,41 @@ form.addEventListener('submit', async (e) => {
         alert("Erro ao gravar O.S. Verifica a consola.");
     }
 });
+import { db } from './firebase-config.js';
+import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Carregar a biblioteca SignaturePad via CDN no HTML ou instanciar diretamente se incluída
+// (Certifica-te de incluir <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script> no cabeçalho do nova-os.html)
+
+let techSignaturePad, custSignaturePad;
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Inicializar os blocos de assinatura
+    const canvasTech = document.getElementById('technician-signature');
+    const canvasCust = document.getElementById('customer-signature');
+    
+    if (canvasTech && canvasCust) {
+        techSignaturePad = new SignaturePad(canvasTech);
+        custSignaturePad = new SignaturePad(canvasCust);
+
+        document.getElementById('clear-tech-sig').addEventListener('click', () => techSignaturePad.clear());
+        document.getElementById('clear-cust-sig').addEventListener('click', () => custSignaturePad.clear());
+    }
+
+    carregarClientesSelect();
+});
+
+// Preencher o select de clientes dinamicamente
+async function carregarClientesSelect() {
+    const select = document.getElementById('client-select');
+    if (!select) return;
+    
+    const querySnapshot = await getDocs(collection(db, "clients"));
+    querySnapshot.forEach((doc) => {
+        const client = doc.data();
+        const option = document.createElement('option');
+        option.value = doc.id;
+        option.textContent = client.name;
+        select.appendChild(option);
+    });
+}
