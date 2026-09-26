@@ -2,47 +2,118 @@ import { db } from './firebase-config.js';
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const historyListDiv = document.getElementById('history-list');
+const filtroCliente = document.getElementById('filtro-cliente');
+const filtroDataInicio = document.getElementById('filtro-data-inicio');
+const filtroDataFim = document.getElementById('filtro-data-fim');
+const btnFiltrar = document.getElementById('btn-filtrar');
+const btnLimpar = document.getElementById('btn-limpar');
 
-// 1. Função para carregar o histórico de O.S. do Firebase
+let todasAsOrdens = []; // Array para guardar os dados e filtrar localmente sem reconsultar sempre o Firebase
+
+// 1. Carregar lista de clientes para o menu de filtro
+async function carregarClientesFiltro() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "clients"));
+        filtroCliente.innerHTML = '<option value="">Todos os clientes</option>';
+        querySnapshot.forEach((doc) => {
+            const client = doc.data();
+            const option = document.createElement('option');
+            option.value = doc.id;
+            option.textContent = client.name || client.razaoSocial;
+            filtroCliente.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar clientes para o filtro:", error);
+    }
+}
+
+// 2. Carregar todas as Ordens de Serviço do Firebase
 async function carregarHistorico() {
     try {
         const querySnapshot = await getDocs(collection(db, "service_orders"));
-        
-        if (querySnapshot.empty) {
-            historyListDiv.innerHTML = "<p>Nenhuma Ordem de Serviço registada.</p>";
-            return;
-        }
+        todasAsOrdens = [];
 
-        let html = "<ul style='list-style: none; padding: 0;'>";
-        
         querySnapshot.forEach((documento) => {
-            const os = documento.data();
-            const osId = documento.id; // ID real do Firebase
-
-            html += `
-                <li style="background: #fff; margin-bottom: 12px; padding: 15px; border-radius: 6px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <strong>Cliente:</strong> ${os.clientName || 'N/A'}<br>
-                    <strong>Equipamento:</strong> ${os.equipment || 'N/A'}<br>
-                    <strong>Tipo:</strong> ${os.serviceType || 'N/A'}<br>
-                    <strong>Data/Início:</strong> ${os.startTime || 'N/A'}<br><br>
-                    
-                    <button onclick="gerarEEnviarRelatorio('${osId}')" style="background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">
-                        📄 Gerar Relatório e Enviar
-                    </button>
-                </li>
-            `;
+            todasAsOrdens.push({
+                id: documento.id,
+                ...documento.data()
+            });
         });
-        
-        html += "</ul>";
-        historyListDiv.innerHTML = html;
 
+        renderizarLista(todasAsOrdens);
     } catch (error) {
         console.error("Erro ao carregar histórico:", error);
         historyListDiv.innerHTML = "<p>Erro ao carregar o histórico.</p>";
     }
 }
 
-// 2. Função para gerar o PDF, fazer download e abrir o e-mail
+// 3. Renderizar a lista de O.S. no ecrã
+function renderizarLista(dados) {
+    if (dados.length === 0) {
+        historyListDiv.innerHTML = "<p>Nenhuma Ordem de Serviço encontrada com estes filtros.</p>";
+        return;
+    }
+
+    let html = "<ul style='list-style: none; padding: 0;'>";
+    
+    dados.forEach((os) => {
+        html += `
+            <li style="background: #fff; margin-bottom: 12px; padding: 15px; border-radius: 6px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <strong>Cliente:</strong> ${os.clientName || 'N/A'}<br>
+                <strong>Equipamento:</strong> ${os.equipment || 'N/A'}<br>
+                <strong>Tipo:</strong> ${os.serviceType || 'N/A'}<br>
+                <strong>Data/Início:</strong> ${os.startTime || 'N/A'}<br><br>
+                
+                <button onclick="gerarEEnviarRelatorio('${os.id}')" style="background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">
+                    📄 Gerar Relatório e Enviar
+                </button>
+            </li>
+        `;
+    });
+    
+    html += "</ul>";
+    historyListDiv.innerHTML = html;
+}
+
+// 4. Lógica de Filtragem (Cliente e Datas)
+btnFiltrar.addEventListener('click', () => {
+    const clienteSelecionado = filtroCliente.value;
+    const dataInicio = filtroDataInicio.value; // Formato "YYYY-MM-DD"
+    const dataFim = filtroDataFim.value;       // Formato "YYYY-MM-DD"
+
+    const filtradas = todasAsOrdens.filter(os => {
+        // Filtro por Cliente
+        if (clienteSelecionado && os.clientId !== clienteSelecionado) {
+            return false;
+        }
+
+        // Filtro por Data (Assume que os.startTime está em formato "YYYY-MM-DDTHH:mm" vindo do input datetime-local)
+        if (os.startTime) {
+            const dataOS = os.startTime.split('T')[0]; // Extrai apenas a parte da data (YYYY-MM-DD)
+
+            if (dataInicio && dataOS < dataInicio) {
+                return false;
+            }
+            if (dataFim && dataOS > dataFim) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    renderizarLista(filtradas);
+});
+
+// 5. Botão Limpar Filtros
+btnLimpar.addEventListener('click', () => {
+    filtroCliente.value = "";
+    filtroDataInicio.value = "";
+    filtroDataFim.value = "";
+    renderizarLista(todasAsOrdens);
+});
+
+// 6. Função para gerar o PDF e abrir o e-mail (Mantida igual)
 async function gerarEEnviarRelatorio(osId) {
     try {
         const docRef = doc(db, "service_orders", osId);
@@ -57,7 +128,6 @@ async function gerarEEnviarRelatorio(osId) {
         const { jsPDF } = window.jspdf;
         const docPDF = new jsPDF();
 
-        // Desenhar PDF
         docPDF.setFont("helvetica", "bold");
         docPDF.setFontSize(16);
         docPDF.text("Relatório de Assistência Técnica", 20, 20);
@@ -92,7 +162,6 @@ async function gerarEEnviarRelatorio(osId) {
             docPDF.text("Assinatura Cliente", 120, posY + 30);
         }
 
-        // Gerar e descarregar PDF
         const pdfBlob = docPDF.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
 
@@ -103,13 +172,12 @@ async function gerarEEnviarRelatorio(osId) {
         downloadLink.click();
         document.body.removeChild(downloadLink);
 
-        // Abrir e-mail
         const emailCliente = data.clientEmail || ""; 
         const assunto = encodeURIComponent(`Relatório de Assistência Técnica - O.S. ${osId}`);
         const corpo = encodeURIComponent(`Olá,\n\nSegue em anexo o relatório técnico referente ao equipamento ${data.equipment}.\n\nCumprimentos,\n${data.technicianName || 'Equipa Técnica'}`);
 
         window.location.href = `mailto:${emailCliente}?subject=${assunto}&body=${corpo}`;
-        alert("Relatório descarregado com sucesso! O seu programa de e-mail foi aberto.");
+        alert("Relatório descarregado com sucesso!");
 
     } catch (error) {
         console.error("Erro ao gerar o relatório:", error);
@@ -117,8 +185,8 @@ async function gerarEEnviarRelatorio(osId) {
     }
 }
 
-// Tornar a função global para o HTML conseguir chamá-la
 window.gerarEEnviarRelatorio = gerarEEnviarRelatorio;
 
 // Executar ao abrir a página
+carregarClientesFiltro();
 carregarHistorico();
