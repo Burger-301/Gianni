@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico de Serviços - Assistência Técnica</title>
+    <title>Histórico de Ordens de Serviço - Assistência Técnica</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Biblioteca jsPDF caso queiras reutilizar a geração de relatório no histórico -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -30,47 +32,73 @@
                 
                 <h2>Histórico de Ordens de Serviço</h2>
                 
-                <!-- Secção de Filtros (Intervalo de tempo e cliente) -->
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px;">
-                    <h3 style="font-size: 16px; margin-top: 0;">Filtros de Pesquisa</h3>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <!-- Secção de Filtros de Pesquisa -->
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; border: 1px solid #ddd;">
+                    <h3 style="font-size: 16px; margin-top: 0; color: #2c3e50;">Filtros de Pesquisa</h3>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                        <!-- Filtro por Cliente -->
                         <div style="flex: 1; min-width: 200px;">
-                            <label style="font-size: 14px;">Cliente:</label>
-                            <select id="filter-client">
+                            <label style="font-size: 13px; font-weight: bold;">Cliente:</label>
+                            <select id="filter-client" style="margin-top: 4px;">
                                 <option value="">Todos os clientes</option>
                             </select>
                         </div>
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 14px;">Data Início:</label>
-                            <input type="date" id="filter-start">
-                        </div>
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 14px;">Data Fim:</label>
-                            <input type="date" id="filter-end">
+                        
+                        <!-- Filtro por Tipo de Manutenção -->
+                        <div style="flex: 1; min-width: 160px;">
+                            <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
+                            <select id="filter-type" style="margin-top: 4px;">
+                                <option value="">Todos os tipos</option>
+                                <option value="Corretiva">Corretiva</option>
+                                <option value="Preventiva">Preventiva</option>
+                                <option value="Garantia">Garantia</option>
+                            </select>
                         </div>
                     </div>
-                    <button type="button" id="apply-filters" style="margin-top: 15px; width: auto; padding: 8px 16px;">Aplicar Filtros</button>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                        <!-- Data Início -->
+                        <div style="flex: 1; min-width: 140px;">
+                            <label style="font-size: 13px; font-weight: bold;">Data Início:</label>
+                            <input type="date" id="filter-start" style="margin-top: 4px;">
+                        </div>
+                        
+                        <!-- Data Fim -->
+                        <div style="flex: 1; min-width: 140px;">
+                            <label style="font-size: 13px; font-weight: bold;">Data Fim:</label>
+                            <input type="date" id="filter-end" style="margin-top: 4px;">
+                        </div>
+
+                        <!-- Botão Aplicar -->
+                        <div>
+                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px;">Filtrar</button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Lista de Serviços -->
+                <!-- Lista de Ordens de Serviço -->
                 <div style="margin-top: 25px;">
                     <div id="history-list">
-                        <p style="color: #666;">A carregar histórico...</p>
+                        <p style="color: #666; text-align: center;">A carregar histórico...</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Script de Gestão, Menu e Autenticação -->
+    <!-- Script de Gestão, Filtros e Firebase -->
     <script type="module">
-        import { auth } from './js/firebase-config.js';
+        import { db, auth } from './js/firebase-config.js';
+        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+        // Verifica Autenticação
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = 'login.html';
         });
 
+        // Controlo do Menu Mobile
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.querySelector('.sidebar');
         if (menuToggle) {
@@ -83,6 +111,111 @@
             e.preventDefault();
             await signOut(auth);
             window.location.href = 'login.html';
+        });
+
+        let allOrders = [];
+        let clientsMap = {};
+
+        // Carregar Clientes para preencher o select do filtro
+        async function loadClientsFilter() {
+            const querySnapshot = await getDocs(collection(db, "clients"));
+            const selectClient = document.getElementById('filter-client');
+            querySnapshot.forEach((docSnap) => {
+                const client = docSnap.data();
+                clientsMap[docSnap.id] = client.name;
+                const option = document.createElement('option');
+                option.value = docSnap.id;
+                option.textContent = client.name;
+                selectClient.appendChild(option);
+            });
+        }
+
+        // Carregar Histórico do Firestore (Mais recente no topo)
+        async function loadHistory() {
+            const historyListDiv = document.getElementById('history-list');
+            try {
+                // Ordenação por data de criação descendente (mais recente primeiro)
+                const q = query(collection(db, "service_orders"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                allOrders = [];
+                querySnapshot.forEach((docSnap) => {
+                    allOrders.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                renderHistory(allOrders);
+            } catch (error) {
+                console.error("Erro ao carregar histórico:", error);
+                historyListDiv.innerHTML = "<p style='color: red;'>Erro ao carregar os dados do histórico.</p>";
+            }
+        }
+
+        // Renderizar a lista de ordens de serviço no ecrã
+        function renderHistory(orders) {
+            const historyListDiv = document.getElementById('history-list');
+            historyListDiv.innerHTML = "";
+
+            if (orders.length === 0) {
+                historyListDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 20px;'>Nenhuma Ordem de Serviço encontrada com os filtros selecionados.</p>";
+                return;
+            }
+
+            let html = "";
+            orders.forEach(order => {
+                const clientName = clientsMap[order.clientId] || order.clientName || "Cliente Desconhecido";
+                const dataInicioFormatada = order.timeStart ? new Date(order.timeStart).toLocaleString('pt-PT') : 'N/A';
+
+                html += `
+                    <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="font-size: 16px; color: #2c3e50;">${clientName}</strong>
+                            <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
+                        </div>
+                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
+                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Manutentor:</strong> ${order.technicianName || 'N/A'}</p>
+                        <p style="margin: 8px 0 0 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
+                    </div>
+                `;
+            });
+            historyListDiv.innerHTML = html;
+        }
+
+        // Lógica de Filtro Dinâmico (Omite o que não corresponde aos critérios)
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            const selectedClient = document.getElementById('filter-client').value;
+            const selectedType = document.getElementById('filter-type').value;
+            const startDate = document.getElementById('filter-start').value;
+            const endDate = document.getElementById('filter-end').value;
+
+            const filtered = allOrders.filter(order => {
+                // Filtro por Cliente
+                if (selectedClient && order.clientId !== selectedClient) {
+                    return false;
+                }
+                // Filtro por Tipo de Manutenção
+                if (selectedType && order.serviceNature !== selectedType) {
+                    return false;
+                }
+                // Filtro por Intervalo de Tempo (baseado na data de início da O.S.)
+                if (order.timeStart) {
+                    const orderDateStr = order.timeStart.split('T')[0]; // Formato AAAA-MM-DD
+                    if (startDate && orderDateStr < startDate) {
+                        return false;
+                    }
+                    if (endDate && orderDateStr > endDate) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            renderHistory(filtered);
+        });
+
+        // Inicialização ao carregar a página
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadClientsFilter();
+            await loadHistory();
         });
     </script>
 </body>
