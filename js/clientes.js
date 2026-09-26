@@ -1,64 +1,66 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const form = document.getElementById('client-form');
-const clientsListDiv = document.getElementById('clients-list');
 
-// 1. Guardar novo cliente no Firestore ao submeter o formulário
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const name = document.getElementById('name').value;
-    const documentId = document.getElementById('document').value;
-    const address = document.getElementById('address').value;
-    const phone = document.getElementById('phone').value;
-    const email = document.getElementById('email').value;
+if (form) {
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-    try {
-        await addDoc(collection(db, "clients"), {
-            name: name,
-            document: documentId,
-            address: address,
-            phone: phone,
-            email: email,
-            createdAt: new Date()
-        });
-        
-        alert("Cliente cadastrado com sucesso!");
-        form.reset(); // Limpa o formulário
-    } catch (error) {
-        console.error("Erro ao cadastrar cliente: ", error);
-        alert("Erro ao salvar cliente. Verifica a consola.");
-    }
-});
+        const name = document.getElementById('name').value;
+        const documentField = document.getElementById('document').value;
+        const address = document.getElementById('address').value;
+        const phone = document.getElementById('phone').value;
+        const email = document.getElementById('email').value;
 
-// 2. Ouvir e listar os clientes do Firestore em tempo real
-function loadClients() {
-    onSnapshot(collection(db, "clients"), (snapshot) => {
-        clientsListDiv.innerHTML = "";
-        
-        if (snapshot.empty) {
-            clientsListDiv.innerHTML = "<p>Nenhum cliente registado ainda.</p>";
-            return;
+        try {
+            // Guarda os dados na coleção 'clients' do Firestore
+            await addDoc(collection(db, "clients"), {
+                name: name,
+                document: documentField,
+                address: address,
+                phone: phone,
+                email: email,
+                createdAt: new Date()
+            });
+
+            alert('Cliente cadastrado com sucesso!');
+            form.reset();
+            carregarClientes(); // Atualiza a lista automaticamente após gravar
+        } catch (error) {
+            console.error("Erro ao salvar cliente: ", error);
+            alert('Erro ao cadastrar cliente. Verifica a consola.');
         }
-
-        let html = "<ul style='list-style: none; padding: 0;'>";
-        snapshot.forEach((doc) => {
-            const client = doc.data();
-            html += `
-                <li style="background: #fff; margin-bottom: 10px; padding: 12px; border-radius: 5px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <strong style="font-size: 16px; color: #333;">${client.name}</strong><br>
-                    <span style="color: #666; font-size: 14px;">
-                        <strong>CNPJ/CPF:</strong> ${client.document} | <strong>Contacto:</strong> ${client.phone}<br>
-                        <strong>Morada:</strong> ${client.address} | <strong>E-mail:</strong> ${client.email}
-                    </span>
-                </li>
-            `;
-        });
-        html += "</ul>";
-        clientsListDiv.innerHTML = html;
     });
 }
 
-// Executar a função de listagem
-loadClients();
+// Função para buscar e listar os clientes registados na página
+async function carregarClientes() {
+    const listDiv = document.getElementById('clients-list');
+    if (!listDiv) return;
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "clients"));
+        if (querySnapshot.empty) {
+            listDiv.innerHTML = '<p>Nenhum cliente registado.</p>';
+            return;
+        }
+
+        let html = '<ul style="list-style: none; padding: 0;">';
+        querySnapshot.forEach((doc) => {
+            const client = doc.data();
+            html += `<li style="background: #fff; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <strong>${client.name}</strong><br>
+                <small>Doc: ${client.document} | Tel: ${client.phone}</small>
+            </li>`;
+        });
+        html += '</ul>';
+        listDiv.innerHTML = html;
+    } catch (error) {
+        console.error("Erro ao carregar clientes: ", error);
+        listDiv.innerHTML = '<p>Erro ao carregar a lista de clientes.</p>';
+    }
+}
+
+// Executa a listagem assim que a página abre
+carregarClientes();
