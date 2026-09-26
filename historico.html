@@ -1,6 +1,64 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Ordens de Serviço</title>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Biblioteca jsPDF necessária para gerar os relatórios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container" style="max-width: 800px; margin: 20px auto; font-family: Arial, sans-serif;">
+        <p><a href="index.html">← Voltar ao Início</a></p>
+        <h2>Histórico de Ordens de Serviço</h2>
+
+        <!-- Secção de Filtros -->
+        <div style="background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h3>Filtrar Histórico</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                
+                <!-- Filtro por Cliente -->
+                <div style="flex: 1; min-width: 200px;">
+                    <label><strong>Cliente:</strong></label><br>
+                    <select id="filtro-cliente" style="width: 100%; padding: 6px; margin-top: 4px;">
+                        <option value="">Todos os clientes</option>
+                    </select>
+                </div>
+
+                <!-- Data Inicial -->
+                <div style="flex: 1; min-width: 150px;">
+                    <label><strong>Data Inicial:</strong></label><br>
+                    <input type="date" id="filtro-data-inicio" style="width: 100%; padding: 6px; margin-top: 4px;">
+                </div>
+
+                <!-- Data Final -->
+                <div style="flex: 1; min-width: 150px;">
+                    <label><strong>Data Final:</strong></label><br>
+                    <input type="date" id="filtro-data-fim" style="width: 100%; padding: 6px; margin-top: 4px;">
+                </div>
+
+                <!-- Botões de Ação -->
+                <div>
+                    <button id="btn-filtrar" style="background: #007bff; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Filtrar</button>
+                    <button id="btn-limpar" style="background: #6c757d; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; margin-left: 5px;">Limpar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onde a lista de ordens vai aparecer dinamicamente -->
+        <div id="history-list">A carregar histórico...</div>
+
+    </div>
+
+    <!-- Script de lógica do histórico -->
+    <script type="module" src="js/relatorio.js"></script>
+</body>
+</html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Histórico de Ordens de Serviço</title>
