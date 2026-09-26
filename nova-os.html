@@ -145,9 +145,19 @@
 
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.querySelector('.sidebar');
-        if (menuToggle) {
-            menuToggle.addEventListener('click', () => {
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
                 sidebar.classList.toggle('active');
+            });
+
+            // Fechar o menu ao clicar fora dele
+            document.addEventListener('click', (event) => {
+                if (sidebar.classList.contains('active')) {
+                    if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                        sidebar.classList.remove('active');
+                    }
+                }
             });
         }
 
