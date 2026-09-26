@@ -47,7 +47,7 @@ async function carregarHistorico() {
     }
 }
 
-// 3. Renderizar a lista de O.S. no ecrã
+// 3. Renderizar a lista de O.S. no ecrã (com valores discriminados)
 function renderizarLista(dados) {
     if (dados.length === 0) {
         historyListDiv.innerHTML = "<p>Nenhuma Ordem de Serviço encontrada com estes filtros.</p>";
@@ -60,9 +60,12 @@ function renderizarLista(dados) {
         html += `
             <li style="background: #fff; margin-bottom: 12px; padding: 15px; border-radius: 6px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <strong>Cliente:</strong> ${os.clientName || 'N/A'}<br>
-                <strong>Equipamento:</strong> ${os.equipment || 'N/A'}<br>
-                <strong>Tipo:</strong> ${os.serviceType || 'N/A'}<br>
-                <strong>Data/Início:</strong> ${os.startTime || 'N/A'}<br><br>
+                <strong>Equipamento:</strong> ${os.equipment || 'N/A'} (${os.brand || ''} ${os.model || ''})<br>
+                <strong>Tipo:</strong> ${os.serviceNature || ''} - ${os.serviceArea || ''}<br>
+                <strong>Data/Início:</strong> ${os.startTime || 'N/A'}<br>
+                <strong>Total de Horas:</strong> ${os.totalHours || '0'}h (Valor Horas: ${os.valorDasHoras || '0.00'}€)<br>
+                <strong>Mão de Obra Manual:</strong> ${os.laborValueManual || '0.00'}€<br>
+                <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">${os.totalValue || '0.00'}€</span><br><br>
                 
                 <button onclick="gerarEEnviarRelatorio('${os.id}')" style="background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">
                     📄 Gerar e Partilhar Relatório
@@ -111,7 +114,7 @@ btnLimpar.addEventListener('click', () => {
     renderizarLista(todasAsOrdens);
 });
 
-// 6. Função otimizada: Gera o PDF e abre a partilha nativa (WhatsApp/E-mail com o ficheiro anexo)
+// 6. Função otimizada: Gera o PDF e abre a partilha nativa (Incluindo os valores financeiros)
 async function gerarEEnviarRelatorio(osId) {
     try {
         const docRef = doc(db, "service_orders", osId);
@@ -133,24 +136,33 @@ async function gerarEEnviarRelatorio(osId) {
 
         docPDF.setFontSize(11);
         docPDF.setFont("helvetica", "normal");
-        docPDF.text(`Cliente: ${data.clientName || 'N/A'}`, 20, 35);
-        docPDF.text(`Equipamento: ${data.equipment || 'N/A'}`, 20, 45);
-        docPDF.text(`Tipo de Serviço: ${data.serviceType || 'N/A'}`, 20, 55);
-        docPDF.text(`Manutentor: ${data.technicianName || 'N/A'}`, 20, 65);
+        docPDF.text(`Cliente: ${data.clientName || 'N/A'}`, 20, 32);
+        docPDF.text(`Equipamento: ${data.equipment || 'N/A'} (Marca: ${data.brand || '-'} / Mod: ${data.model || '-'})`, 20, 40);
+        docPDF.text(`Tipo de Serviço: ${data.serviceNature || ''} - ${data.serviceArea || ''}`, 20, 48);
+        docPDF.text(`Manutentor: ${data.technicianName || 'N/A'}`, 20, 56);
+        docPDF.text(`Início: ${data.startTime || '-'} | Fim: ${data.endTime || '-'}`, 20, 64);
         
         docPDF.setFont("helvetica", "bold");
-        docPDF.text("Descrição do Serviço:", 20, 80);
+        docPDF.text("Descrição do Serviço:", 20, 76);
         docPDF.setFont("helvetica", "normal");
         
         const splitDescription = docPDF.splitTextToSize(data.description || 'Sem descrição', 170);
-        docPDF.text(splitDescription, 20, 90);
+        docPDF.text(splitDescription, 20, 84);
 
-        let posY = 120 + (splitDescription.length * 5);
-        docPDF.text(`Início: ${data.startTime || '-'} | Fim: ${data.endTime || '-'}`, 20, posY);
-        posY += 10;
-        docPDF.text(`Regresso à Base: ${data.returnBase || '-'}`, 20, posY);
+        let posY = 95 + (splitDescription.length * 5);
 
-        posY += 20;
+        // Secção de Custos e Valores no PDF
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text("Resumo Financeiro:", 20, posY);
+        docPDF.setFont("helvetica", "normal");
+        docPDF.text(`- Horas Trabalhadas: ${data.totalHours || '0'}h (Valor Horas: ${data.valorDasHoras || '0.00'}€)`, 20, posY + 8);
+        docPDF.text(`- Mão de Obra Manual: ${data.laborValueManual || '0.00'}€`, 20, posY + 16);
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(`- Valor Total a Pagar: ${data.totalValue || '0.00'}€`, 20, posY + 24);
+
+        posY += 38;
+
+        // Adicionar assinaturas se existirem
         if (data.technicianSignature) {
             docPDF.addImage(data.technicianSignature, 'PNG', 20, posY, 60, 25);
             docPDF.text("Assinatura Manutentor", 20, posY + 30);
@@ -166,7 +178,7 @@ async function gerarEEnviarRelatorio(osId) {
         const fileName = `Relatorio_OS_${osId}.pdf`;
         const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-        // Tentar usar a partilha nativa do dispositivo (abre WhatsApp, E-mail, etc. com o PDF anexo)
+        // Tentar usar a partilha nativa do dispositivo
         if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
             try {
                 await navigator.share({
@@ -184,7 +196,7 @@ async function gerarEEnviarRelatorio(osId) {
             }
         }
 
-        // Fallback: Se o browser não suportar partilha direta de ficheiros, faz o download normal
+        // Fallback: Download normal caso o browser não suporte partilha direta
         const pdfUrl = URL.createObjectURL(pdfBlob);
         const downloadLink = document.createElement('a');
         downloadLink.href = pdfUrl;
