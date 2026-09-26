@@ -89,6 +89,21 @@
         </main>
     </div>
 
+    <!-- Modal Personalizado para Selecionar Data e Hora de Regresso -->
+    <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Registar Hora de Regresso</h3>
+            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Selecione a data e hora de chegada a casa/base:</p>
+            
+            <input type="datetime-local" id="input-nova-hora" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 20px;">
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="btn-cancelar-modal" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btn-salvar-modal" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Script de Gestão, Filtros, PDF com Logótipo e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
@@ -117,6 +132,7 @@
 
         let allOrders = [];
         let clientsMap = {};
+        let activeOsIdForHoraFim = null;
 
         // Função auxiliar para converter a imagem local do logótipo em Base64 para o jsPDF
         async function getBase64ImageFromUrl(imageUrl) {
@@ -225,11 +241,38 @@
             historyListDiv.innerHTML = html;
         }
 
-        // Função global para adicionar ou atualizar a hora de regresso a casa
-        window.adicionarHoraFim = async function(osId) {
-            const novaHora = prompt("Indique a data e hora de chegada a casa/base (Formato AAAA-MM-DDTHH:MM, ex: 2026-09-26T18:30):");
-            if (!novaHora) return;
+        // Função global para abrir o modal de seleção da hora de regresso
+        window.adicionarHoraFim = function(osId) {
+            activeOsIdForHoraFim = osId;
+            
+            // Sugere a data/hora atual no input por defeito
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            const hora = String(agora.getHours()).padStart(2, '0');
+            const min = String(agora.getMinutes()).padStart(2, '0');
+            document.getElementById('input-nova-hora').value = `${ano}-${mes}-${dia}T${hora}:${min}`;
 
+            // Abre o modal
+            document.getElementById('modal-hora-fim').style.display = 'flex';
+        };
+
+        // Botão cancelar do modal
+        document.getElementById('btn-cancelar-modal').addEventListener('click', () => {
+            document.getElementById('modal-hora-fim').style.display = 'none';
+            activeOsIdForHoraFim = null;
+        });
+
+        // Botão salvar do modal
+        document.getElementById('btn-salvar-modal').addEventListener('click', async () => {
+            const novaHora = document.getElementById('input-nova-hora').value;
+            if (!novaHora) {
+                alert("Por favor, selecione uma data e hora válidas.");
+                return;
+            }
+
+            const osId = activeOsIdForHoraFim;
             const order = allOrders.find(item => item.id === osId);
             if (!order) return;
 
@@ -252,13 +295,14 @@
                     totalValue: totalValue.toFixed(2)
                 });
 
+                document.getElementById('modal-hora-fim').style.display = 'none';
                 alert("Hora de regresso e valores atualizados com sucesso!");
                 loadHistory();
             } catch (error) {
                 console.error("Erro ao atualizar hora final:", error);
                 alert("Ocorreu um erro ao atualizar os dados.");
             }
-        };
+        });
 
         // Função global para gerar o PDF com o Logótipo e abrir opções de partilha nativa
         window.gerarEPartilharPDF = async function(osId) {
