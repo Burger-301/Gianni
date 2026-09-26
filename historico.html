@@ -86,17 +86,31 @@
         </main>
     </div>
 
-    <!-- Modal Personalizado para Selecionar Data e Hora de Fim -->
-    <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Registar Data e Hora de Fim</h3>
-            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Selecione a data e hora de conclusão:</p>
+    <!-- Modal Personalizado para Atualizar Turnos -->
+    <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Atualizar Turnos e Encerramento</h3>
             
-            <input type="datetime-local" id="input-nova-hora" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 20px;">
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: bold;">Início Manhã:</label>
+                <input type="datetime-local" id="modal-start-manha" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: bold;">Final Manhã:</label>
+                <input type="datetime-local" id="modal-end-manha" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: bold;">Início Tarde:</label>
+                <input type="datetime-local" id="modal-start-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: bold;">Final Tarde (Encerramento da O.S.):</label>
+                <input type="datetime-local" id="modal-end-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
             
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" id="btn-cancelar-modal" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                <button type="button" id="btn-salvar-modal" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar</button>
+                <button type="button" id="btn-salvar-modal" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar e Recalcular</button>
             </div>
         </div>
     </div>
@@ -168,7 +182,6 @@
                 sidebar.classList.toggle('active');
             });
 
-            // Fechar o menu ao clicar fora dele
             document.addEventListener('click', (event) => {
                 if (sidebar.classList.contains('active')) {
                     if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
@@ -200,6 +213,36 @@
             const hora = String(d.getHours()).padStart(2, '0');
             const min = String(d.getMinutes()).padStart(2, '0');
             return `${dia}/${mes}/${ano} às ${hora}:${min}`;
+        }
+
+        // Função de cálculo exato de minutos somando manhã + tarde
+        function calcularMinutosTrabalhados(startM, endM, startT, endT) {
+            let minutosTotais = 0;
+
+            if (startM && endM) {
+                const diffM = new Date(endM) - new Date(startM);
+                if (diffM > 0) minutosTotais += diffM / (1000 * 60);
+            }
+
+            if (startT && endT) {
+                const diffT = new Date(endT) - new Date(startT);
+                if (diffT > 0) minutosTotais += diffT / (1000 * 60);
+            }
+
+            if (minutosTotais < 0) minutosTotais = 0;
+
+            const horasDecimais = minutosTotais / 60;
+            const valorTotal = horasDecimais * 200.00; // R$ 200,00 por hora interno
+
+            const horasExatas = Math.floor(minutosTotais / 60);
+            const minutosRestantes = minutosTotais % 60;
+            const formatadoTexto = `${horasExatas}h ${minutosRestantes}m`;
+
+            return {
+                totalHours: horasDecimais.toFixed(2),
+                totalHoursText: formatadoTexto,
+                totalValue: valorTotal.toFixed(2)
+            };
         }
 
         async function getBase64ImageFromUrl(imageUrl) {
@@ -266,10 +309,14 @@
             orders.forEach(order => {
                 const clientInfo = clientsMap[order.clientId] || {};
                 const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
-                const dataInicioFormatada = formatarDataHora(order.timeStart);
                 
-                const temHoraFim = order.timeEnd && order.timeEnd !== "";
-                const dataFimFormatada = temHoraFim ? formatarDataHora(order.timeEnd) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
+                const inicioManhaFmt = formatarDataHora(order.timeStartManha || order.timeStart);
+                const fimManhaFmt = formatarDataHora(order.timeEndManha);
+                const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
+                
+                // A ordem encerra ao preencher a data e hora final da tarde (timeEndTarde)
+                const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
+                const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -277,11 +324,11 @@
                             <strong style="font-size: 16px; color: #2c3e50;">${clientName}</strong>
                             <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
                         </div>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'}, Matrícula/Série: ${order.serialNumber || '-'})</p>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Fim:</strong> ${dataFimFormatada}</p>
-                        
+                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
+                        <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Manhã:</strong> ${inicioManhaFmt} até ${fimManhaFmt}</p>
+                        <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Tarde:</strong> ${inicioTardeFmt} até ${fimTardeFmt}</p>
                         <p style="margin: 4px 0; font-size: 13px; color: #444;">
-                            <strong>Horas:</strong> ${order.totalHours || '0'}h | <strong>Pagamento:</strong> Para ${order.paymentTerms || '-'} dias
+                            <strong>Total Horas:</strong> ${order.totalHoursText || order.totalHours || '0'}h | <strong>Pagamento:</strong> Para ${order.paymentTerms || '-'} dias
                         </p>
                         <p style="margin: 4px 0; font-size: 14px;">
                             <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">R$ ${order.totalValue || '0.00'}</span>
@@ -293,8 +340,8 @@
                             <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
                                 📄 Gerar Relatório
                             </button>
-                            <button onclick="adicionarHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                ⏱️ ${temHoraFim ? 'Editar Hora Fim' : 'Adicionar Hora Fim'}
+                            <button onclick="abrirModalHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                                ⏱️ ${temEncerramento ? 'Editar Turnos/Encerramento' : 'Preencher Encerramento'}
                             </button>
                             <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
                                 ✏️ Editar
@@ -309,15 +356,15 @@
             historyListDiv.innerHTML = html;
         }
 
-        window.adicionarHoraFim = function(osId) {
+        window.abrirModalHoraFim = function(osId) {
             activeOsIdForHoraFim = osId;
-            const agora = new Date();
-            const ano = agora.getFullYear();
-            const mes = String(agora.getMonth() + 1).padStart(2, '0');
-            const dia = String(agora.getDate()).padStart(2, '0');
-            const hora = String(agora.getHours()).padStart(2, '0');
-            const min = String(agora.getMinutes()).padStart(2, '0');
-            document.getElementById('input-nova-hora').value = `${ano}-${mes}-${dia}T${hora}:${min}`;
+            const order = allOrders.find(item => item.id === osId);
+            if (!order) return;
+
+            document.getElementById('modal-start-manha').value = order.timeStartManha || order.timeStart || '';
+            document.getElementById('modal-end-manha').value = order.timeEndManha || '';
+            document.getElementById('modal-start-tarde').value = order.timeStartTarde || '';
+            document.getElementById('modal-end-tarde').value = order.timeEndTarde || '';
 
             document.getElementById('modal-hora-fim').style.display = 'flex';
         };
@@ -328,38 +375,31 @@
         });
 
         document.getElementById('btn-salvar-modal').addEventListener('click', async () => {
-            const novaHora = document.getElementById('input-nova-hora').value;
-            if (!novaHora) {
-                alert("Por favor, selecione uma data e hora válidas.");
-                return;
-            }
+            const startM = document.getElementById('modal-start-manha').value;
+            const endM = document.getElementById('modal-end-manha').value;
+            const startT = document.getElementById('modal-start-tarde').value;
+            const endT = document.getElementById('modal-end-tarde').value;
 
-            const osId = activeOsIdForHoraFim;
-            const order = allOrders.find(item => item.id === osId);
-            if (!order) return;
-
-            const start = new Date(order.timeStart);
-            const end = new Date(novaHora);
-            const diffMs = end - start;
-            const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
-            
-            const VALOR_HORA_FIXO = 200.00; 
-            const valorDasHoras = diffHours * VALOR_HORA_FIXO;
-            const totalValue = valorDasHoras;
+            const calc = calcularMinutosTrabalhados(startM, endM, startT, endT);
 
             try {
-                const docRef = doc(db, "service_orders", osId);
+                const docRef = doc(db, "service_orders", activeOsIdForHoraFim);
                 await updateDoc(docRef, {
-                    timeEnd: novaHora,
-                    totalHours: diffHours.toFixed(2),
-                    totalValue: totalValue.toFixed(2)
+                    timeStartManha: startM,
+                    timeEndManha: endM,
+                    timeStartTarde: startT,
+                    timeEndTarde: endT, // Encerramento oficial da O.S.
+                    timeEnd: endT,
+                    totalHours: calc.totalHours,
+                    totalHoursText: calc.totalHoursText,
+                    totalValue: calc.totalValue
                 });
 
                 document.getElementById('modal-hora-fim').style.display = 'none';
-                alert("Data/Hora de fim e valores atualizados com sucesso!");
+                alert("Turnos e encerramento atualizados com sucesso!");
                 loadHistory();
             } catch (error) {
-                console.error("Erro ao atualizar data/hora final:", error);
+                console.error("Erro ao atualizar turnos:", error);
                 alert("Ocorreu um erro ao atualizar os dados.");
             }
         });
@@ -499,20 +539,18 @@
 
                 y += 24;
 
-                // Horário formatado
+                // Horário / Turnos formatados no PDF
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
-                docPDF.text("Horário", 22, y + 5);
+                docPDF.text("Horários e Turnos", 22, y + 5);
 
                 y += 7;
                 docPDF.setFont("helvetica", "normal");
-                const inicioFormatadoPDF = formatarDataHora(order.timeStart);
-                const fimFormatadoPDF = order.timeEnd ? formatarDataHora(order.timeEnd) : 'Pendente';
-                docPDF.text(`Data e hora de início: ${inicioFormatadoPDF}`, 22, y + 5);
-                docPDF.text(`Data e hora de fim: ${fimFormatadoPDF}`, 105, y + 5);
+                docPDF.text(`Manhã: ${formatarDataHora(order.timeStartManha || order.timeStart)} até ${formatarDataHora(order.timeEndManha)}`, 22, y + 5);
+                docPDF.text(`Tarde: ${formatarDataHora(order.timeStartTarde)} até ${order.timeEndTarde ? formatarDataHora(order.timeEndTarde) : 'Pendente'}`, 22, y + 11);
 
-                y += 15;
+                y += 18;
 
                 // EQUIPAMENTO
                 docPDF.setFillColor(230, 235, 245);
@@ -543,7 +581,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // VALOR TOTAL (Sem o valor da hora explícito no relatório)
+                // VALOR TOTAL
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -551,7 +589,7 @@
 
                 y += 8;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h`, 22, y + 4);
+                docPDF.text(`• Total Horas Trabalhadas: ${order.totalHoursText || order.totalHours + 'h' || '0h'}`, 22, y + 4);
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
 
@@ -625,8 +663,9 @@
                 if (selectedType && order.serviceNature !== selectedType) {
                     return false;
                 }
-                if (order.timeStart) {
-                    const orderDateStr = order.timeStart.split('T')[0];
+                const refDate = order.timeStartManha || order.timeStart;
+                if (refDate) {
+                    const orderDateStr = refDate.split('T')[0];
                     if (startDate && orderDateStr < startDate) {
                         return false;
                     }
