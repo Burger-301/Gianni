@@ -208,7 +208,7 @@
                         <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Início:</strong> ${dataInicioFormatada} | <strong>Fim:</strong> ${dataFimFormatada}</p>
                         
                         <p style="margin: 4px 0; font-size: 13px; color: #444;">
-                            <strong>Horas:</strong> ${order.totalHours || '0'}h
+                            <strong>Horas:</strong> ${order.totalHours || '0'}h | <strong>Pagamento:</strong> Para ${order.paymentTerms || '-'} dias
                         </p>
                         <p style="margin: 4px 0; font-size: 14px;">
                             <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">R$ ${order.totalValue || '0.00'}</span>
@@ -411,7 +411,13 @@
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
 
-                y += 22;
+                // CONDIÇÃO DE PAGAMENTO APÓS O VALOR TOTAL
+                y += 18;
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(9);
+                docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
+
+                y += 20;
 
                 // Assinaturas
                 docPDF.setLineWidth(0.2);
