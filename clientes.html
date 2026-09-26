@@ -1,97 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Clientes - Assistência Técnica</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="app-container">
-        <!-- Menu Lateral (Sidebar) -->
-        <aside class="sidebar">
-            <h2>Assistência Técnica</h2>
-            <nav>
-                <a href="index.html">🏠 Início</a>
-                <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
-                <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
-                <a href="historico.html">📜 Histórico</a>
-                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
-            </nav>
-        </aside>
-
-        <!-- Conteúdo Principal -->
-        <main class="main-content">
-            <!-- Botão de menu para telemóveis -->
-            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
-
-            <div class="container">
-                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
-                
-                <h2>Gestão de Clientes</h2>
-
-                <!-- Formulário de Cadastro -->
-                <div style="margin-top: 20px;">
-                    <h3>Cadastrar Novo Cliente</h3>
-                    <form id="client-form">
-                        <div>
-                            <label>Nome / Razão Social:</label>
-                            <input type="text" id="client-name" placeholder="Nome do cliente" required>
-                        </div>
-                        <div>
-                            <label>CNPJ / CPF:</label>
-                            <input type="text" id="client-doc" placeholder="000.000.000-00">
-                        </div>
-                        <div>
-                            <label>Morada / Endereço:</label>
-                            <input type="text" id="client-address" placeholder="Morada completa">
-                        </div>
-                        <div>
-                            <label>Contacto / Telefone:</label>
-                            <input type="text" id="client-phone" placeholder="Telemóvel / Telefone">
-                        </div>
-                        <div>
-                            <label>E-mail:</label>
-                            <input type="email" id="client-email" placeholder="email@exemplo.com">
-                        </div>
-                        <button type="submit">Salvar Cliente</button>
-                    </form>
-                </div>
-
-                <!-- Lista de Clientes Registados -->
-                <div style="margin-top: 40px;">
-                    <h3>Clientes Registados</h3>
-                    <div id="clients-list" style="margin-top: 15px;">
-                        <p style="color: #666;">A carregar clientes...</p>
-                    </div>
-                </div>
-            </div>
-        </main>
+<aside class="sidebar">
+    <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
+        <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
     </div>
-
-    <!-- Script de Gestão, Menu e Autenticação -->
-    <script type="module">
-        import { auth } from './js/firebase-config.js';
-        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = 'login.html';
-        });
-
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.querySelector('.sidebar');
-        if (menuToggle) {
-            menuToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-            });
-        }
-
-        document.getElementById('btn-logout').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await signOut(auth);
-            window.location.href = 'login.html';
-        });
-    </script>
-    <script type="module" src="js/clientes.js"></script>
-</body>
-</html>
+    <nav>
+        <a href="historico.html">🏠 Início / Histórico</a>
+        <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
+        <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
+        <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+    </nav>
+</aside>
