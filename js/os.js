@@ -68,15 +68,33 @@ form.addEventListener('submit', async (e) => {
 
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
+    // Recolher tempos e valor da hora para o cálculo automático
+    const timeStartStr = document.getElementById('time-start').value;
+    const timeEndStr = document.getElementById('time-end').value;
+    const hourlyRate = parseFloat(document.getElementById('hourly-rate').value) || 0;
+
+    // Calcular a diferença de tempo em horas
+    const start = new Date(timeStartStr);
+    const end = new Date(timeEndStr);
+    const diffMs = end - start;
+    const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
+    const totalValue = diffHours * hourlyRate;
+
     const osData = {
         clientId: clientSelect.value,
         clientName: selectedOption.dataset.clientName,
         clientEmail: selectedOption.dataset.clientEmail,
         equipment: document.getElementById('equipment').value,
-        serviceType: `${document.getElementById('service-nature').value} - ${document.getElementById('service-area').value}`,
-        startTime: document.getElementById('time-start').value,
-        endTime: document.getElementById('time-end').value,
-        returnBase: document.getElementById('time-base').value,
+        brand: document.getElementById('brand').value,
+        serialNumber: document.getElementById('serial-number').value,
+        model: document.getElementById('model').value,
+        serviceNature: document.getElementById('service-nature').value,
+        serviceArea: document.getElementById('service-area').value,
+        timeStart: timeStartStr,
+        timeEnd: timeEndStr,
+        hourlyRate: hourlyRate,
+        totalHours: diffHours.toFixed(2),
+        totalValue: totalValue.toFixed(2), // Valor total calculado automaticamente
         description: document.getElementById('description').value,
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),       // Imagem da assinatura em Base64
