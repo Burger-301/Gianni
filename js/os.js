@@ -4,9 +4,22 @@ import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/
 const clientSelect = document.getElementById('client-select');
 const form = document.getElementById('os-form');
 
-// 1. Inicializar as caixas de assinatura digital (Signature Pad)
+// 1. Função para ajustar a escala dos canvas (Garante nitidez e toque correto em telemóveis/tablets)
+function ajustarCanvas(canvas) {
+    if (!canvas) return;
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+}
+
 const techCanvas = document.getElementById('tech-pad');
 const clientCanvas = document.getElementById('client-pad');
+
+ajustarCanvas(techCanvas);
+ajustarCanvas(clientCanvas);
+
+// Inicializar as caixas de assinatura digital (Signature Pad)
 const techPad = new SignaturePad(techCanvas);
 const clientPad = new SignaturePad(clientCanvas);
 
@@ -19,11 +32,21 @@ async function loadClientsDropdown() {
         const querySnapshot = await getDocs(collection(db, "clients"));
         clientSelect.innerHTML = '<option value="">Selecione um cliente...</option>';
         
+        if (querySnapshot.empty) {
+            clientSelect.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
+            return;
+        }
+
         querySnapshot.forEach((doc) => {
             const client = doc.data();
             const option = document.createElement('option');
             option.value = doc.id;
-            option.textContent = client.name + " (" + client.document + ")";
+            
+            // Guardar o nome e email nos datasets para facilitar depois
+            option.dataset.clientName = client.name || client.razaoSocial || 'Cliente sem nome';
+            option.dataset.clientEmail = client.email || '';
+
+            option.textContent = `${client.name || client.razaoSocial} (${client.document || client.cnpj || 'N/A'})`;
             clientSelect.appendChild(option);
         });
     } catch (error) {
@@ -43,19 +66,21 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
+    const selectedOption = clientSelect.options[clientSelect.selectedIndex];
+
     const osData = {
         clientId: clientSelect.value,
-        clientName: clientSelect.options[clientSelect.selectedIndex].text,
+        clientName: selectedOption.dataset.clientName,
+        clientEmail: selectedOption.dataset.clientEmail,
         equipment: document.getElementById('equipment').value,
-        serviceNature: document.getElementById('service-nature').value,
-        serviceArea: document.getElementById('service-area').value,
-        timeStart: document.getElementById('time-start').value,
-        timeEnd: document.getElementById('time-end').value,
-        timeBase: document.getElementById('time-base').value,
+        serviceType: `${document.getElementById('service-nature').value} - ${document.getElementById('service-area').value}`,
+        startTime: document.getElementById('time-start').value,
+        endTime: document.getElementById('time-end').value,
+        returnBase: document.getElementById('time-base').value,
         description: document.getElementById('description').value,
         technicianName: document.getElementById('technician-name').value,
-        techSignature: techPad.toDataURL(),       // Imagem da assinatura em Base64
-        clientSignature: clientPad.toDataURL(),   // Imagem da assinatura em Base64
+        technicianSignature: techPad.toDataURL(),       // Imagem da assinatura em Base64
+        customerSignature: clientPad.toDataURL(),     // Imagem da assinatura em Base64
         createdAt: new Date()
     };
 
@@ -65,46 +90,11 @@ form.addEventListener('submit', async (e) => {
         form.reset();
         techPad.clear();
         clientPad.clear();
+        
+        // Redirecionar para o histórico após gravar
+        window.location.href = "historico.html";
     } catch (error) {
         console.error("Erro ao guardar O.S.: ", error);
         alert("Erro ao gravar O.S. Verifica a consola.");
     }
 });
-import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-// Carregar a biblioteca SignaturePad via CDN no HTML ou instanciar diretamente se incluída
-// (Certifica-te de incluir <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script> no cabeçalho do nova-os.html)
-
-let techSignaturePad, custSignaturePad;
-
-document.addEventListener("DOMContentLoaded", () => {
-    // Inicializar os blocos de assinatura
-    const canvasTech = document.getElementById('technician-signature');
-    const canvasCust = document.getElementById('customer-signature');
-    
-    if (canvasTech && canvasCust) {
-        techSignaturePad = new SignaturePad(canvasTech);
-        custSignaturePad = new SignaturePad(canvasCust);
-
-        document.getElementById('clear-tech-sig').addEventListener('click', () => techSignaturePad.clear());
-        document.getElementById('clear-cust-sig').addEventListener('click', () => custSignaturePad.clear());
-    }
-
-    carregarClientesSelect();
-});
-
-// Preencher o select de clientes dinamicamente
-async function carregarClientesSelect() {
-    const select = document.getElementById('client-select');
-    if (!select) return;
-    
-    const querySnapshot = await getDocs(collection(db, "clients"));
-    querySnapshot.forEach((doc) => {
-        const client = doc.data();
-        const option = document.createElement('option');
-        option.value = doc.id;
-        option.textContent = client.name;
-        select.appendChild(option);
-    });
-}
