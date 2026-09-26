@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Assistência Técnica</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 380px;
+        }
+        h2 { color: #333; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #555; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background: #007BFF; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #error-msg { color: red; text-align: center; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Iniciar Sessão</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label>E-mail:</label>
+                <input type="email" id="email" required placeholder="exemplo@email.com">
+            </div>
+            <div class="form-group">
+                <label>Palavra-passe:</label>
+                <input type="password" id="password" required placeholder="********">
+            </div>
+            <button type="submit">Entrar</button>
+            <div id="error-msg"></div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { auth } from './js/firebase-config.js';
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const loginForm = document.getElementById('login-form');
+        const errorMsg = document.getElementById('error-msg');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Erro no login:", error);
+                errorMsg.textContent = "Erro ao entrar. Verifique o e-mail e a senha.";
+            }
+        });
+    </script>
+</body>
+</html>
