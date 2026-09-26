@@ -97,6 +97,7 @@ form.addEventListener('submit', async (e) => {
         hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
         totalValue: totalValue.toFixed(2),
         description: document.getElementById('description').value,
+        paymentTerms: document.getElementById('payment-terms').value, // Condição de Pagamento em dias
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),
         customerSignature: clientPad.toDataURL(),
@@ -113,6 +114,6 @@ form.addEventListener('submit', async (e) => {
         window.location.href = "historico.html";
     } catch (error) {
         console.error("Erro ao guardar O.S.: ", error);
-        alert("Erro ao gravar O.S. Verifica a consola.");
+        alert("Ocorreu um erro ao gravar a O.S. Verifica a consola.");
     }
 });
