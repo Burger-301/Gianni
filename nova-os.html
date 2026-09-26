@@ -3,103 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nova Ordem de Serviço</title>
+    <title>Registar Nova Ordem de Serviço</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- Biblioteca de assinaturas digitais -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 </head>
 <body>
-    <div class="container" style="max-width: 700px; margin: 20px auto; font-family: Arial, sans-serif;">
-        <p><a href="index.html">← Voltar ao Início</a></p>
-        <h2>Registar Nova Ordem de Serviço (O.S.)</h2>
+    <div class="app-container">
+        <!-- Menu Lateral (Sidebar) -->
+        <aside class="sidebar">
+            <h2>Assistência Técnica</h2>
+            <nav>
+                <a href="index.html">🏠 Início</a>
+                <a href="clientes.html">👥 Gestão de Clientes</a>
+                <a href="nova-os.html" class="active">📋 Nova Ordem de Serviço</a>
+                <a href="historico.html">📜 Histórico</a>
+                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+            </nav>
+        </aside>
 
-        <form id="os-form" style="background: #f4f4f4; padding: 20px; border-radius: 8px;">
-            
-            <!-- Seleção do Cliente (O JavaScript vai preencher isto automaticamente) -->
-            <div style="margin-bottom: 15px;">
-                <label><strong>Cliente:</strong></label><br>
-                <select id="client-select" required style="width: 100%; padding: 8px; margin-top: 5px;">
-                    <option value="">A carregar clientes...</option>
-                </select>
-            </div>
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Botão de menu para telemóveis (hambúrguer) -->
+            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
 
-            <!-- Dados do Equipamento e Serviço -->
-            <div style="margin-bottom: 15px;">
-                <label><strong>Equipamento / Descrição do Ativo:</strong></label><br>
-                <input type="text" id="equipment" placeholder="Ex: Gerador / Máquina X" required style="width: 100%; padding: 8px; margin-top: 5px;">
-            </div>
+            <div class="container" style="max-width: 700px;">
+                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
+                <h2>Registar Nova Ordem de Serviço (O.S.)</h2>
 
-            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label><strong>Tipo de Manutenção:</strong></label><br>
-                    <select id="service-nature" style="width: 100%; padding: 8px; margin-top: 5px;">
-                        <option value="Corretiva">Corretiva</option>
-                        <option value="Preventiva">Preventiva</option>
-                    </select>
-                </div>
-                <div style="flex: 1;">
-                    <label><strong>Área:</strong></label><br>
-                    <select id="service-area" style="width: 100%; padding: 8px; margin-top: 5px;">
-                        <option value="Eletrica">Elétrica</option>
-                        <option value="Mecanica">Mecânica</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Controlo de Tempos -->
-            <fieldset style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                <legend><strong>Controlo de Tempos</strong></legend>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <div style="flex: 1;">
-                        <label>Início:</label>
-                        <input type="datetime-local" id="time-start" required style="width: 100%; padding: 6px;">
+                <form id="os-form">
+                    
+                    <!-- Seleção do Cliente -->
+                    <div>
+                        <label><strong>Cliente:</strong></label>
+                        <select id="client-select" required>
+                            <option value="">A carregar clientes...</option>
+                        </select>
                     </div>
-                    <div style="flex: 1;">
-                        <label>Fim do Serviço:</label>
-                        <input type="datetime-local" id="time-end" required style="width: 100%; padding: 6px;">
+
+                    <!-- Dados do Equipamento e Serviço -->
+                    <div>
+                        <label><strong>Equipamento / Descrição do Ativo:</strong></label>
+                        <input type="text" id="equipment" placeholder="Ex: Gerador / Máquina X" required>
                     </div>
-                </div>
-                <div>
-                    <label>Regresso à Base:</label>
-                    <input type="datetime-local" id="time-base" required style="width: 100%; padding: 6px;">
-                </div>
-            </fieldset>
 
-            <!-- Relatório Escrito -->
-            <div style="margin-bottom: 15px;">
-                <label><strong>Relatório Escrito (Descrição do Trabalho Executado):</strong></label><br>
-                <textarea id="description" rows="4" placeholder="Descreva detalhadamente o serviço realizado..." required style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label><strong>Tipo de Manutenção:</strong></label>
+                            <select id="service-nature">
+                                <option value="Corretiva">Corretiva</option>
+                                <option value="Preventiva">Preventiva</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label><strong>Área:</strong></label>
+                            <select id="service-area">
+                                <option value="Eletrica">Elétrica</option>
+                                <option value="Mecanica">Mecânica</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Controlo de Tempos -->
+                    <fieldset style="padding: 15px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+                        <legend><strong>Controlo de Tempos</strong></legend>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 14px;">Início:</label>
+                                <input type="datetime-local" id="time-start" required>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 14px;">Fim do Serviço:</label>
+                                <input type="datetime-local" id="time-end" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size: 14px;">Regresso à Base:</label>
+                            <input type="datetime-local" id="time-base" required>
+                        </div>
+                    </fieldset>
+
+                    <!-- Relatório Escrito -->
+                    <div>
+                        <label><strong>Relatório Escrito (Descrição do Trabalho Executado):</strong></label>
+                        <textarea id="description" rows="4" placeholder="Descreva detalhadamente o serviço realizado..." required></textarea>
+                    </div>
+
+                    <!-- Nome do Manutentor -->
+                    <div>
+                        <label><strong>Manutentor Responsável:</strong></label>
+                        <input type="text" id="technician-name" placeholder="O teu nome" required>
+                    </div>
+
+                    <!-- Assinatura do Manutentor -->
+                    <div>
+                        <label><strong>Assinatura do Manutentor:</strong></label>
+                        <canvas id="tech-pad"></canvas>
+                        <button type="button" id="clear-tech" style="margin-top: 5px; background: #6c757d; padding: 6px 12px; font-size: 14px; width: auto;">Limpar Assinatura</button>
+                    </div>
+
+                    <!-- Assinatura do Cliente -->
+                    <div>
+                        <label><strong>Assinatura do Cliente Responsável:</strong></label>
+                        <canvas id="client-pad"></canvas>
+                        <button type="button" id="clear-client" style="margin-top: 5px; background: #6c757d; padding: 6px 12px; font-size: 14px; width: auto;">Limpar Assinatura</button>
+                    </div>
+
+                    <button type="submit" style="background: #28a745; margin-top: 10px;">Finalizar e Guardar O.S.</button>
+                </form>
             </div>
-
-            <!-- Nome do Manutentor -->
-            <div style="margin-bottom: 15px;">
-                <label><strong>Manutentor Responsável:</strong></label><br>
-                <input type="text" id="technician-name" placeholder="O teu nome" required style="width: 100%; padding: 8px; margin-top: 5px;">
-            </div>
-
-            <!-- Assinatura do Manutentor -->
-            <div style="margin-bottom: 15px;">
-                <label><strong>Assinatura do Manutentor:</strong></label><br>
-                <div style="background: white; border: 1px solid #ccc; display: inline-block; margin-top: 5px;">
-                    <canvas id="tech-pad" width="300" height="150" style="touch-action: none;"></canvas>
-                </div>
-                <div><button type="button" id="clear-tech" style="padding: 4px 8px; font-size: 12px; cursor: pointer;">Limpar Assinatura</button></div>
-            </div>
-
-            <!-- Assinatura do Cliente -->
-            <div style="margin-bottom: 15px;">
-                <label><strong>Assinatura do Cliente Responsável:</strong></label><br>
-                <div style="background: white; border: 1px solid #ccc; display: inline-block; margin-top: 5px;">
-                    <canvas id="client-pad" width="300" height="150" style="touch-action: none;"></canvas>
-                </div>
-                <div><button type="button" id="clear-client" style="padding: 4px 8px; font-size: 12px; cursor: pointer;">Limpar Assinatura</button></div>
-            </div>
-
-            <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; width: 100%;">Finalizar e Guardar O.S.</button>
-        </form>
+        </main>
     </div>
 
-    <!-- Script de ligação -->
+    <!-- Script de Gestão, Menu e Autenticação -->
+    <script type="module">
+        import { auth } from './js/firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Verifica autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = 'login.html';
+        });
+
+        // Controlo do Menu Mobile
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        // Terminar Sessão
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'login.html';
+        });
+    </script>
+
+    <!-- Script específico da O.S. (Lógica do Firestore e SignaturePad) -->
     <script type="module" src="js/os.js"></script>
 </body>
 </html>
