@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Função para gerar o PDF e enviar/partilhar
+// Função para gerar o PDF e efetuar o download/abrir e-mail
 async function gerarEEnviarRelatorio(osId) {
     try {
         // 1. Buscar os dados da O.S. no Firebase
@@ -57,51 +57,33 @@ async function gerarEEnviarRelatorio(osId) {
             docPDF.text("Assinatura Cliente", 120, posY + 30);
         }
 
-        // 5. Gerar o Ficheiro PDF
+        // 5. Gerar o Ficheiro PDF e o Blob para download
         const pdfBlob = docPDF.output('blob');
-        const pdfFile = new File([pdfBlob], `Relatorio_OS_${osId}.pdf`, { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(pdfBlob);
 
-        // 6. Enviar por Partilha Nativa (E-mail, WhatsApp, etc.)
-        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-            await navigator.share({
-                title: 'Relatório de Assistência Técnica',
-                text: `Segue em anexo o relatório da O.S. referente ao equipamento ${data.equipment}.`,
-                files: [pdfFile],
-            });
-        } else {
-            // Fallback: Se o navegador não suportar partilha de ficheiros, descarrega o PDF automaticamente
-            docPDF.save(`Relatorio_OS_${osId}.pdf`);
-            alert("O PDF foi descarregado para o dispositivo. Podes anexá-lo manualmente ao e-mail.");
-        }
+        // 6. Forçar o download automático do PDF para o dispositivo
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pdfUrl;
+        downloadLink.download = `Relatorio_OS_${osId}.pdf`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // 7. Preparar os dados para abrir o programa de e-mail automaticamente
+        const emailCliente = data.clientEmail || ""; 
+        const assunto = encodeURIComponent(`Relatório de Assistência Técnica - O.S. ${osId}`);
+        const corpo = encodeURIComponent(`Olá,\n\nSegue em anexo o relatório técnico referente ao equipamento ${data.equipment}.\n\nCumprimentos,\n${data.technicianName || 'Equipa Técnica'}`);
+
+        // 8. Disparar a abertura do cliente de e-mail
+        window.location.href = `mailto:${emailCliente}?subject=${assunto}&body=${corpo}`;
+
+        alert("Relatório descarregado com sucesso! O seu programa de e-mail foi aberto.");
 
     } catch (error) {
         console.error("Erro ao gerar o relatório:", error);
-        alert("Erro ao gerar ou enviar o relatório.");
+        alert("Erro ao gerar o relatório.");
     }
 }
 
-// Associar a função ao botão de partilha no histórico/ecrã final
+// Associar a função ao botão no histórico/ecrã final
 window.gerarEEnviarRelatorio = gerarEEnviarRelatorio;
-// ... [Código anterior que desenha o PDF e adiciona as assinaturas] ...
-
-// SUBSTITUI A PARTIR DAQUI:
-const pdfBlob = docPDF.output('blob');
-const pdfUrl = URL.createObjectURL(pdfBlob);
-
-// 1. Força o download automático do PDF para o dispositivo
-const downloadLink = document.createElement('a');
-downloadLink.href = pdfUrl;
-downloadLink.download = `Relatorio_OS_${osId}.pdf`;
-document.body.appendChild(downloadLink);
-downloadLink.click();
-document.body.removeChild(downloadLink);
-
-// 2. Prepara os dados para abrir o e-mail automaticamente
-const emailCliente = data.clientEmail || ""; 
-const assunto = encodeURIComponent(`Relatório de Assistência Técnica - O.S. ${osId}`);
-const corpo = encodeURIComponent(`Olá,\n\nSegue em anexo o relatório técnico referente ao equipamento ${data.equipment}.\n\nCumprimentos,\n${data.technicianName || 'Equipa Técnica'}`);
-
-// 3. Abre o cliente de e-mail (Outlook, Gmail, etc.)
-window.location.href = `mailto:${emailCliente}?subject=${assunto}&body=${corpo}`;
-
-alert("Relatório descarregado com sucesso! O seu programa de e-mail foi aberto.");
