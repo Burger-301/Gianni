@@ -4,6 +4,9 @@ import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/
 const clientSelect = document.getElementById('client-select');
 const form = document.getElementById('os-form');
 
+// Define aqui o valor fixo cobrado por hora de trabalho
+const VALOR_HORA_FIXO = 25.00; 
+
 // 1. Função para ajustar a escala dos canvas (Garante nitidez e toque correto em telemóveis/tablets)
 function ajustarCanvas(canvas) {
     if (!canvas) return;
@@ -68,17 +71,22 @@ form.addEventListener('submit', async (e) => {
 
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
-    // Recolher tempos e valor da hora para o cálculo automático
+    // Recolher tempos e o valor manual da mão de obra inserido no formulário
     const timeStartStr = document.getElementById('time-start').value;
     const timeEndStr = document.getElementById('time-end').value;
-    const hourlyRate = parseFloat(document.getElementById('hourly-rate').value) || 0;
+    const laborValueManual = parseFloat(document.getElementById('labor-value').value) || 0;
 
     // Calcular a diferença de tempo em horas
     const start = new Date(timeStartStr);
     const end = new Date(timeEndStr);
     const diffMs = end - start;
     const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
-    const totalValue = diffHours * hourlyRate;
+    
+    // Cálculo automático do valor das horas com base na taxa fixa
+    const valorDasHoras = diffHours * VALOR_HORA_FIXO;
+
+    // Soma total (Valor das horas automáticas + Mão de obra manual)
+    const totalValue = valorDasHoras + laborValueManual;
 
     const osData = {
         clientId: clientSelect.value,
@@ -92,9 +100,11 @@ form.addEventListener('submit', async (e) => {
         serviceArea: document.getElementById('service-area').value,
         timeStart: timeStartStr,
         timeEnd: timeEndStr,
-        hourlyRate: hourlyRate,
         totalHours: diffHours.toFixed(2),
-        totalValue: totalValue.toFixed(2), // Valor total calculado automaticamente
+        hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
+        valorDasHoras: valorDasHoras.toFixed(2),
+        laborValueManual: laborValueManual.toFixed(2),
+        totalValue: totalValue.toFixed(2), // Valor total somado
         description: document.getElementById('description').value,
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),       // Imagem da assinatura em Base64
