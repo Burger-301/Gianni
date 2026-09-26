@@ -1,5 +1,13 @@
-import { db } from './firebase-config.js';
+import { db, storage } from './firebase-config.js';
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// Inicializar o EmailJS com a tua Public Key
+(function(){
+   emailjs.init({
+     publicKey: "i6oeJ8jc50ggan8WT",
+   });
+})();
 
 const historyListDiv = document.getElementById('history-list');
 const filtroCliente = document.getElementById('filtro-cliente');
@@ -65,7 +73,7 @@ function renderizarLista(dados) {
                 <strong>Data/Início:</strong> ${os.startTime || 'N/A'}<br><br>
                 
                 <button onclick="gerarEEnviarRelatorio('${os.id}')" style="background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">
-                    📄 Gerar Relatório e Enviar
+                    📄 Gerar Relatório e Enviar por E-mail
                 </button>
             </li>
         `;
@@ -78,18 +86,16 @@ function renderizarLista(dados) {
 // 4. Lógica de Filtragem (Cliente e Datas)
 btnFiltrar.addEventListener('click', () => {
     const clienteSelecionado = filtroCliente.value;
-    const dataInicio = filtroDataInicio.value; // Formato "YYYY-MM-DD"
-    const dataFim = filtroDataFim.value;       // Formato "YYYY-MM-DD"
+    const dataInicio = filtroDataInicio.value; 
+    const dataFim = filtroDataFim.value;       
 
     const filtradas = todasAsOrdens.filter(os => {
-        // Filtro por Cliente
         if (clienteSelecionado && os.clientId !== clienteSelecionado) {
             return false;
         }
 
-        // Filtro por Data (Assume que os.startTime está em formato "YYYY-MM-DDTHH:mm" vindo do input datetime-local)
         if (os.startTime) {
-            const dataOS = os.startTime.split('T')[0]; // Extrai apenas a parte da data (YYYY-MM-DD)
+            const dataOS = os.startTime.split('T')[0];
 
             if (dataInicio && dataOS < dataInicio) {
                 return false;
@@ -113,7 +119,7 @@ btnLimpar.addEventListener('click', () => {
     renderizarLista(todasAsOrdens);
 });
 
-// 6. Função para gerar o PDF e abrir o e-mail (Mantida igual)
+// 6. Função para gerar o PDF, guardar na nuvem e enviar o link por EmailJS
 async function gerarEEnviarRelatorio(osId) {
     try {
         const docRef = doc(db, "service_orders", osId);
@@ -162,26 +168,34 @@ async function gerarEEnviarRelatorio(osId) {
             docPDF.text("Assinatura Cliente", 120, posY + 30);
         }
 
+        // Converter o PDF em Blob
         const pdfBlob = docPDF.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
 
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pdfUrl;
-        downloadLink.download = `Relatorio_OS_${osId}.pdf`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        // Enviar para o Firebase Storage
+        const nomeFicheiro = `relatorios/os_${osId}_${Date.now()}.pdf`;
+        const storageRef = ref(storage, nomeFicheiro);
 
-        const emailCliente = data.clientEmail || ""; 
-        const assunto = encodeURIComponent(`Relatório de Assistência Técnica - O.S. ${osId}`);
-        const corpo = encodeURIComponent(`Olá,\n\nSegue em anexo o relatório técnico referente ao equipamento ${data.equipment}.\n\nCumprimentos,\n${data.technicianName || 'Equipa Técnica'}`);
+        alert("A gerar e a enviar o relatório para a nuvem...");
+        const snapshot = await uploadBytes(storageRef, pdfBlob);
+        const downloadURL = await getDownloadURL(snapshot.ref);
 
-        window.location.href = `mailto:${emailCliente}?subject=${assunto}&body=${corpo}`;
-        alert("Relatório descarregado com sucesso!");
+        // Configurar parâmetros do EmailJS
+        const templateParams = {
+            client_name: data.clientName || 'Cliente',
+            equipment: data.equipment || 'Equipamento',
+            technician_name: data.technicianName || 'Equipa Técnica',
+            to_email: data.clientEmail || 'cristianst3@gmail.com', // Se não houver e-mail guardado, vai para o teu de teste
+            report_link: downloadURL
+        };
+
+        // Disparar o envio automático
+        await emailjs.send('service_8qhtl4g', 'Template_q60mgbl', templateParams);
+        
+        alert("Relatório guardado na nuvem e e-mail enviado automaticamente ao cliente com sucesso!");
 
     } catch (error) {
-        console.error("Erro ao gerar o relatório:", error);
-        alert("Erro ao gerar o relatório.");
+        console.error("Erro ao gerar ou enviar o relatório:", error);
+        alert("Ocorreu um erro ao processar o relatório.");
     }
 }
 
