@@ -277,7 +277,7 @@
             const diffMs = end - start;
             const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
             
-            const VALOR_HORA_FIXO = 25.00; // Podes alterar aqui se o valor por hora em Reais for diferente
+            const VALOR_HORA_FIXO = 25.00; 
             const valorDasHoras = diffHours * VALOR_HORA_FIXO;
             const laborManual = parseFloat(order.laborValueManual) || 0;
             const totalValue = valorDasHoras + laborManual;
@@ -340,6 +340,7 @@
 
                 let y = 33;
 
+                // Empresa Responsável
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -356,6 +357,7 @@
 
                 y += 18;
 
+                // Cliente
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -371,6 +373,7 @@
 
                 y += 24;
 
+                // Horário
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -383,20 +386,34 @@
 
                 y += 15;
 
+                // EQUIPAMENTO (NOVA SECÇÃO SEPARADA)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
-                docPDF.text("Serviços a realizar / realizados", 22, y + 5);
+                docPDF.text("Equipamento", 22, y + 5);
+
+                y += 7;
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`Equipamento: ${order.equipment || 'N/A'}`, 22, y + 5);
+                docPDF.text(`Marca: ${order.brand || '-'} | Modelo: ${order.model || '-'}`, 105, y + 5);
+
+                y += 15;
+
+                // SERVIÇOS REALIZADOS (APENAS TIPO E DESCRIÇÃO)
+                docPDF.setFillColor(230, 235, 245);
+                docPDF.rect(20, y, 170, 7, 'F');
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Serviços realizados", 22, y + 5);
 
                 y += 10;
                 docPDF.setFont("helvetica", "normal");
-                const descText = `Equipamento: ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'} / Modelo: ${order.model || '-'})\nTipo: ${order.serviceNature || ''} - ${order.serviceArea || ''}\nDescrição: ${order.description || 'Sem descrição'}`;
+                const descText = `Tipo: ${order.serviceNature || ''} - ${order.serviceArea || ''}\nDescrição: ${order.description || 'Sem descrição'}`;
                 const splitDescription = docPDF.splitTextToSize(descText, 165);
                 docPDF.text(splitDescription, 22, y);
 
                 y += (splitDescription.length * 5) + 8;
 
-                // SEÇÃO: VALOR TOTAL (Em Reais R$)
+                // VALOR TOTAL (ALTERADO PARA "TOTAL")
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -407,10 +424,11 @@
                 docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h`, 22, y + 4);
                 docPDF.text(`• Mão de Obra: R$ ${order.laborValueManual || '0.00'}`, 22, y + 10);
                 docPDF.setFont("helvetica", "bold");
-                docPDF.text(`• TOTAL GERAL: R$ ${order.totalValue || '0.00'}`, 22, y + 18);
+                docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 18);
 
                 y += 28;
 
+                // Assinaturas
                 docPDF.setLineWidth(0.2);
                 docPDF.line(20, y + 15, 90, y + 15);
                 docPDF.line(120, y + 15, 190, y + 15);
