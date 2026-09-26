@@ -101,10 +101,59 @@
         </div>
     </div>
 
+    <!-- Modal para Editar Ordem de Serviço -->
+    <div id="modal-editar-os" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Editar Ordem de Serviço</h3>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: bold;">Equipamento:</label>
+                <input type="text" id="edit-equipment" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Marca:</label>
+                    <input type="text" id="edit-brand" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Modelo:</label>
+                    <input type="text" id="edit-model" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: bold;">Matrícula / N° de Série:</label>
+                <input type="text" id="edit-serial" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
+                    <select id="edit-nature" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                        <option value="Corretiva">Corretiva</option>
+                        <option value="Preventiva">Preventiva</option>
+                        <option value="Garantia">Garantia</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Condição Pagamento (dias):</label>
+                    <input type="text" id="edit-payment" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: bold;">Descrição do Serviço:</label>
+                <textarea id="edit-description" rows="3" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="btn-cancelar-edit" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btn-salvar-edit" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Guardar Alterações</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Script de Gestão, Filtros, PDF com Logótipo e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
-        import { collection, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
@@ -138,6 +187,7 @@
         let allOrders = [];
         let clientsMap = {};
         let activeOsIdForHoraFim = null;
+        let activeOsIdForEdit = null;
 
         async function getBase64ImageFromUrl(imageUrl) {
             try {
@@ -228,10 +278,16 @@
 
                         <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
                             <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                📄 Gerar Relatório Modelo RG
+                                📄 Gerar Relatório
                             </button>
                             <button onclick="adicionarHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                ⏱️ ${temHoraFim ? 'Editar Data/Hora Fim' : 'Adicionar Data/Hora Fim'}
+                                ⏱️ ${temHoraFim ? 'Editar Hora Fim' : 'Adicionar Hora Fim'}
+                            </button>
+                            <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                                ✏️ Editar
+                            </button>
+                            <button onclick="excluirOS('${order.id}')" style="background: #dc3545; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                                🗑️ Excluir
                             </button>
                         </div>
                     </div>
@@ -274,7 +330,6 @@
             const diffMs = end - start;
             const diffHours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
             
-            // Valor da hora atualizado para R$ 200,00
             const VALOR_HORA_FIXO = 200.00; 
             const valorDasHoras = diffHours * VALOR_HORA_FIXO;
             const totalValue = valorDasHoras;
@@ -295,6 +350,69 @@
                 alert("Ocorreu um erro ao atualizar os dados.");
             }
         });
+
+        // Funções para Editar O.S.
+        window.abrirModalEditar = function(osId) {
+            activeOsIdForEdit = osId;
+            const order = allOrders.find(item => item.id === osId);
+            if (!order) return;
+
+            document.getElementById('edit-equipment').value = order.equipment || '';
+            document.getElementById('edit-brand').value = order.brand || '';
+            document.getElementById('edit-model').value = order.model || '';
+            document.getElementById('edit-serial').value = order.serialNumber || '';
+            document.getElementById('edit-nature').value = order.serviceNature || 'Corretiva';
+            document.getElementById('edit-payment').value = order.paymentTerms || '';
+            document.getElementById('edit-description').value = order.description || '';
+
+            document.getElementById('modal-editar-os').style.display = 'flex';
+        };
+
+        document.getElementById('btn-cancelar-edit').addEventListener('click', () => {
+            document.getElementById('modal-editar-os').style.display = 'none';
+            activeOsIdForEdit = null;
+        });
+
+        document.getElementById('btn-salvar-edit').addEventListener('click', async () => {
+            const osId = activeOsIdForEdit;
+            if (!osId) return;
+
+            const updatedData = {
+                equipment: document.getElementById('edit-equipment').value,
+                brand: document.getElementById('edit-brand').value,
+                model: document.getElementById('edit-model').value,
+                serialNumber: document.getElementById('edit-serial').value,
+                serviceNature: document.getElementById('edit-nature').value,
+                paymentTerms: document.getElementById('edit-payment').value,
+                description: document.getElementById('edit-description').value
+            };
+
+            try {
+                const docRef = doc(db, "service_orders", osId);
+                await updateDoc(docRef, updatedData);
+
+                document.getElementById('modal-editar-os').style.display = 'none';
+                alert("Ordem de Serviço atualizada com sucesso!");
+                loadHistory();
+            } catch (error) {
+                console.error("Erro ao atualizar O.S.:", error);
+                alert("Ocorreu um erro ao atualizar a Ordem de Serviço.");
+            }
+        });
+
+        // Função para Excluir O.S.
+        window.excluirOS = async function(osId) {
+            if (confirm("Tem a certeza de que pretende eliminar esta Ordem de Serviço do histórico?")) {
+                try {
+                    await deleteDoc(doc(db, "service_orders", osId));
+                    alert("Ordem de Serviço eliminada com sucesso!");
+                    loadHistory();
+                } catch (error) {
+                    console.error("Erro ao eliminar O.S.:", error);
+                    alert("Ocorreu um erro ao eliminar a Ordem de Serviço.");
+                }
+            }
+        };
 
         window.gerarEPartilharPDF = async function(osId) {
             try {
@@ -418,11 +536,11 @@
 
                 y += 8;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h`, 22, y + 4);
+                docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h (R$ 200,00/h)`, 22, y + 4);
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
 
-                // CONDIÇÃO DE PAGAMENTO APÓS O VALOR TOTAL
+                // CONDIÇÃO DE PAGAMENTO
                 y += 18;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(9);
