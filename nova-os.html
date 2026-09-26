@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Ordem de Serviço</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Importar a biblioteca signature_pad para as assinaturas -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+    <div class="container" style="max-width: 700px; margin: 20px auto; font-family: Arial, sans-serif;">
+        <p><a href="index.html">← Voltar ao Início</a></p>
+        <h2>Registar Nova Ordem de Serviço (O.S.)</h2>
+
+        <form id="os-form" style="background: #f4f4f4; padding: 20px; border-radius: 8px;">
+            
+            <!-- Seleção do Cliente -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Cliente:</strong></label><br>
+                <select id="client-select" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                    <option value="">A carregar clientes...</option>
+                </select>
+            </div>
+
+            <!-- Dados do Equipamento e Serviço -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Equipamento / Descrição do Ativo:</strong></label><br>
+                <input type="text" id="equipment" placeholder="Ex: Gerador / Máquina X" required style="width: 100%; padding: 8px; margin-top: 5px;">
+            </div>
+
+            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label><strong>Tipo de Manutenção:</strong></label><br>
+                    <select id="service-nature" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="Corretiva">Corretiva</option>
+                        <option value="Preventiva">Preventiva</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label><strong>Área:</strong></label><br>
+                    <select id="service-area" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="Eletrica">Elétrica</option>
+                        <option value="Mecanica">Mecânica</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Controlo de Tempos -->
+            <fieldset style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <legend><strong>Controlo de Tempos</strong></legend>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label>Início:</label>
+                        <input type="datetime-local" id="time-start" required style="width: 100%; padding: 6px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Fim do Serviço:</label>
+                        <input type="datetime-local" id="time-end" required style="width: 100%; padding: 6px;">
+                    </div>
+                </div>
+                <div>
+                    <label>Regresso à Base:</label>
+                    <input type="datetime-local" id="time-base" required style="width: 100%; padding: 6px;">
+                </div>
+            </fieldset>
+
+            <!-- Relatório Escrito -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Relatório Escrito (Descrição do Trabalho Executado):</strong></label><br>
+                <textarea id="description" rows="4" placeholder="Descreva detalhadamente o serviço realizado..." required style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+            </div>
+
+            <!-- Nome do Manutentor -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Manutentor Responsável:</strong></label><br>
+                <input type="text" id="technician-name" placeholder="O teu nome" required style="width: 100%; padding: 8px; margin-top: 5px;">
+            </div>
+
+            <!-- Assinatura do Manutentor -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Assinatura do Manutentor:</strong></label>
+                <div style="background: white; border: 1px solid #ccc; display: inline-block; margin-top: 5px;">
+                    <canvas id="tech-pad" width="300" height="150"></canvas>
+                </div>
+                <div><button type="button" id="clear-tech" style="padding: 4px 8px; font-size: 12px;">Limpar Assinatura</button></div>
+            </div>
+
+            <!-- Assinatura do Cliente -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Assinatura do Cliente Responsável:</strong></label>
+                <div style="background: white; border: 1px solid #ccc; display: inline-block; margin-top: 5px;">
+                    <canvas id="client-pad" width="300" height="150"></canvas>
+                </div>
+                <div><button type="button" id="clear-client" style="padding: 4px 8px; font-size: 12px;">Limpar Assinatura</button></div>
+            </div>
+
+            <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; width: 100%;">Finalizar e Guardar O.S.</button>
+        </form>
+    </div>
+
+    <!-- Script de lógica da O.S. -->
+    <script type="module" src="js/os.js"></script>
+</body>
+</html>

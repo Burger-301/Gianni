@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Ordens de Serviço</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 800px; margin: 20px auto; font-family: Arial, sans-serif;">
+        <p><a href="index.html">← Voltar ao Início</a></p>
+        <h2>Histórico de Ordens de Serviço</h2>
+
+        <!-- Filtros de Pesquisa -->
+        <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <label><strong>Data Inicial:</strong></label>
+                <input type="date" id="filter-start" style="width: 100%; padding: 6px; margin-top: 5px;">
+            </div>
+            <div style="flex: 1;">
+                <label><strong>Data Final:</strong></label>
+                <input type="date" id="filter-end" style="width: 100%; padding: 6px; margin-top: 5px;">
+            </div>
+            <div>
+                <button id="btn-filter" style="background: #007BFF; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Filtrar</button>
+            </div>
+        </div>
+
+        <!-- Lista de Ordens de Serviço -->
+        <div id="history-list">
+            <p>A carregar histórico...</p>
+        </div>
+    </div>
+
+    <!-- Script de lógica do histórico -->
+    <script type="module" src="js/historico.js"></script>
+</body>
+</html>

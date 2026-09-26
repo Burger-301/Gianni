@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistência Técnica - Início</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { color: #333; font-size: 22px; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 20px; }
+        nav ul { list-style: none; padding: 0; }
+        nav li { margin-bottom: 10px; }
+        nav a {
+            display: block;
+            background: #007BFF;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        nav a:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assistência Técnica</h1>
+        <p>Painel de Controlo Principal</p>
+        
+        <nav>
+            <ul>
+                <li><a href="clientes.html">Gestão de Clientes</a></li>
+                <li><a href="nova-os.html">Nova Ordem de Serviço (O.S.)</a></li>
+                <li><a href="historico.html">Histórico de Serviços</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Script de teste para verificar ligação ao Firebase -->
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        console.log("Firebase ligado com sucesso!", db);
+    </script>
+</body>
+</html>

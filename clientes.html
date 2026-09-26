@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Clientes</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 600px; margin: 20px auto; font-family: Arial, sans-serif;">
+        <p><a href="index.html">← Voltar ao Início</a></p>
+        <h2>Gestão de Clientes</h2>
+
+        <!-- Formulário para Adicionar Cliente -->
+        <form id="client-form" style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3>Cadastrar Novo Cliente</h3>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="name" placeholder="Nome / Razão Social" required style="width: 100%; padding: 8px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="document" placeholder="CNPJ / CPF" required style="width: 100%; padding: 8px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="address" placeholder="Morada / Endereço" required style="width: 100%; padding: 8px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="phone" placeholder="Contacto / Telefone" required style="width: 100%; padding: 8px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="email" id="email" placeholder="E-mail" required style="width: 100%; padding: 8px;">
+            </div>
+            <button type="submit" style="background: #007BFF; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px;">Salvar Cliente</button>
+        </form>
+
+        <!-- Lista de Clientes Registados -->
+        <h3>Clientes Registados</h3>
+        <div id="clients-list">
+            <p>A carregar clientes...</p>
+        </div>
+    </div>
+
+    <!-- Ligar o Script JavaScript -->
+    <script type="module" src="js/clientes.js"></script>
+</body>
+</html>
