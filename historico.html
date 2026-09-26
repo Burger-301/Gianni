@@ -543,7 +543,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // VALOR TOTAL
+                // VALOR TOTAL (Sem o valor da hora explícito no relatório)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -551,7 +551,7 @@
 
                 y += 8;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h (R$ 200,00/h)`, 22, y + 4);
+                docPDF.text(`• Horas Trabalhadas: ${order.totalHours || '0'}h`, 22, y + 4);
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
 
