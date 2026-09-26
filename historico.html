@@ -189,6 +189,19 @@
         let activeOsIdForHoraFim = null;
         let activeOsIdForEdit = null;
 
+        // Função para formatar data e hora para dd/mm/aaaa às hh:mm
+        function formatarDataHora(dateStr) {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const dia = String(d.getDate()).padStart(2, '0');
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const ano = d.getFullYear();
+            const hora = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            return `${dia}/${mes}/${ano} às ${hora}:${min}`;
+        }
+
         async function getBase64ImageFromUrl(imageUrl) {
             try {
                 const response = await fetch(imageUrl);
@@ -253,10 +266,10 @@
             orders.forEach(order => {
                 const clientInfo = clientsMap[order.clientId] || {};
                 const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
-                const dataInicioFormatada = order.timeStart ? new Date(order.timeStart).toLocaleString('pt-PT') : 'N/A';
+                const dataInicioFormatada = formatarDataHora(order.timeStart);
                 
                 const temHoraFim = order.timeEnd && order.timeEnd !== "";
-                const dataFimFormatada = temHoraFim ? new Date(order.timeEnd).toLocaleString('pt-PT') : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
+                const dataFimFormatada = temHoraFim ? formatarDataHora(order.timeEnd) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -486,7 +499,7 @@
 
                 y += 24;
 
-                // Horário
+                // Horário formatado no padrão solicitados (dd/mm/aaaa às hh:mm)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -494,8 +507,10 @@
 
                 y += 7;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`Data e hora de início: ${order.timeStart || 'N/A'}`, 22, y + 5);
-                docPDF.text(`Data e hora de fim: ${order.timeEnd || 'Pendente'}`, 105, y + 5);
+                const inicioFormatadoPDF = formatarDataHora(order.timeStart);
+                const fimFormatadoPDF = order.timeEnd ? formatarDataHora(order.timeEnd) : 'Pendente';
+                docPDF.text(`Data e hora de início: ${inicioFormatadoPDF}`, 22, y + 5);
+                docPDF.text(`Data e hora de fim: ${fimFormatadoPDF}`, 105, y + 5);
 
                 y += 15;
 
