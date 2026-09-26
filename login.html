@@ -22,18 +22,27 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 380px;
+            text-align: center;
         }
-        h2 { color: #333; text-align: center; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
+        .login-card img {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+        h2 { color: #333; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; text-align: left; }
         label { display: block; margin-bottom: 5px; color: #555; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; background: #007BFF; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 16px; cursor: pointer; }
         button:hover { background: #0056b3; }
-        #error-msg { color: red; text-align: center; margin-top: 10px; font-size: 14px; }
+        #error-msg { color: red; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="login-card">
+        <!-- Logótipo adicionado -->
+        <img src="img/logo.png" alt="RG Soluções Técnicas">
+        
         <h2>Iniciar Sessão</h2>
         <form id="login-form">
             <div class="form-group">
@@ -63,7 +72,8 @@
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = 'index.html';
+                // Redireciona diretamente para o Histórico (nova página inicial)
+                window.location.href = 'historico.html';
             } catch (error) {
                 console.error("Erro no login:", error);
                 errorMsg.textContent = "Erro ao entrar. Verifique o e-mail e a senha.";
