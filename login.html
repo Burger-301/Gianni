@@ -58,8 +58,9 @@
         </form>
     </div>
 
+    <!-- Script com Cache Busting (v=1.1) -->
     <script type="module">
-        import { auth } from './js/firebase-config.js';
+        import { auth } from './js/firebase-config.js?v=1.1';
         import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const loginForm = document.getElementById('login-form');
@@ -72,7 +73,6 @@
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // Redireciona diretamente para o Histórico (nova página inicial)
                 window.location.href = 'historico.html';
             } catch (error) {
                 console.error("Erro no login:", error);
