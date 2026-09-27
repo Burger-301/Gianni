@@ -164,7 +164,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Logótipo, Anexo Compacto e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF com Logótipo, Anexos Múltiplos e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -360,7 +360,8 @@
                 const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
                 const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
                 
-                const badgeAnexo = order.imageUrl ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📷 Com Anexo</span>` : '';
+                const temFotos = (order.imageUrls && order.imageUrls.length > 0) || order.imageUrl;
+                const badgeAnexo = temFotos ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📷 Com Anexo(s)</span>` : '';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
@@ -636,25 +637,48 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // Fotografia / Anexo (Compacta e posicionada logo abaixo dos serviços)
-                if (order.imageUrl) {
-                    const imgBase64 = await getBase64ImageFromUrl(order.imageUrl);
-                    if (imgBase64) {
-                        if (y > 210) {
-                            docPDF.addPage();
-                            y = 20;
-                        }
-
-                        docPDF.setFillColor(230, 235, 245);
-                        docPDF.rect(20, y, 170, 6, 'F');
-                        docPDF.setFont("helvetica", "bold");
-                        docPDF.setFontSize(9);
-                        docPDF.text("Fotografia / Anexo do Equipamento", 22, y + 4);
-                        
-                        y += 8;
-                        docPDF.addImage(imgBase64, 'JPEG', 20, y, 80, 50);
-                        y += 58; 
+                // Fotografias / Anexos (Grelha compacta de imagens lado a lado)
+                const listaImagens = order.imageUrls || (order.imageUrl ? [order.imageUrl] : []);
+                if (listaImagens.length > 0) {
+                    if (y > 200) {
+                        docPDF.addPage();
+                        y = 20;
                     }
+
+                    docPDF.setFillColor(230, 235, 245);
+                    docPDF.rect(20, y, 170, 6, 'F');
+                    docPDF.setFont("helvetica", "bold");
+                    docPDF.setFontSize(9);
+                    docPDF.text("Fotografia(s) / Anexo(s) do Equipamento", 22, y + 4);
+                    
+                    y += 8;
+
+                    let imgX = 20;
+                    let imgY = y;
+                    let maxAlt = 0;
+
+                    for (let i = 0; i < listaImagens.length; i++) {
+                        const imgBase64 = await getBase64ImageFromUrl(listaImagens[i]);
+                        if (imgBase64) {
+                            if (imgX + 80 > 190) {
+                                imgX = 20;
+                                imgY += maxAlt + 5;
+                                maxAlt = 0;
+                            }
+
+                            if (imgY + 50 > 270) {
+                                docPDF.addPage();
+                                imgY = 20;
+                                imgX = 20;
+                            }
+
+                            docPDF.addImage(imgBase64, 'JPEG', imgX, imgY, 80, 50);
+                            if (50 > maxAlt) maxAlt = 50;
+
+                            imgX += 88; // Desloca para a direita para a próxima foto na mesma linha
+                        }
+                    }
+                    y = imgY + maxAlt + 10;
                 }
 
                 // Valor Total e Condição de Pagamento
