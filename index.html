@@ -162,7 +162,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Logótipo, PIX Automático e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF com Validação/Vencimento e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -530,6 +530,12 @@
 
                 const dataEmissao = new Date().toLocaleDateString('pt-BR');
 
+                // Calcular data de vencimento com base nos dias de condição de pagamento
+                const diasPagamento = parseInt(order.paymentTerms) || 30;
+                const dataVencimentoObj = new Date();
+                dataVencimentoObj.setDate(dataVencimentoObj.getDate() + diasPagamento);
+                const dataVencimentoFmt = dataVencimentoObj.toLocaleDateString('pt-BR');
+
                 const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
                 if (logoBase64) {
                     docPDF.addImage(logoBase64, 'PNG', 20, 10, 32, 14);
@@ -623,7 +629,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // Valor Total e Condição de Pagamento
+                // Valor Total e Condição de Pagamento (Com data de vencimento calculada)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -638,7 +644,7 @@
                 y += 18;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(9);
-                docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
+                docPDF.text(`• Condição de Pagamento: Para ${order.paymentTerms || '30'} dias (Vencimento em: ${dataVencimentoFmt})`, 22, y);
 
                 y += 12;
 
