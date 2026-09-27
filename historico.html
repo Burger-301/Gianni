@@ -644,7 +644,7 @@
 
                 y += 12;
 
-                // DADOS BANCÁRIOS & QR CODE PIX (Faixa azul padronizada com altura 7)
+                // DADOS BANCÁRIOS & QR CODE PIX (Faixa azul de altura 7 padronizada)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -669,7 +669,8 @@
                     docPDF.text("Escaneie para pagar", 145, y + 25);
                 }
 
-                y += 28; // Espaço seguro para afastar as assinaturas
+                // ESPAÇAMENTO AUMENTADO ANTES DAS ASSINATURAS
+                y += 42; 
 
                 // Assinaturas
                 docPDF.setLineWidth(0.2);
