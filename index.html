@@ -31,53 +31,57 @@
             <div class="container" style="max-width: 800px;">
                 <h2>Histórico de Ordens de Serviço</h2>
                 
-                <!-- Secção de Filtros de Pesquisa -->
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3 style="font-size: 16px; margin-top: 0; color: #2c3e50;">Filtros de Pesquisa</h3>
+                <!-- Secção de Filtros Compacta e Retrátil -->
+                <details style="background: #f8f9fa; padding: 10px 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ddd;">
+                    <summary style="font-weight: bold; cursor: pointer; color: #2c3e50; font-size: 14px; outline: none;">
+                        🔍 Filtros de Pesquisa (Clique para abrir/recolher)
+                    </summary>
                     
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                        <!-- Filtro por Cliente -->
-                        <div style="flex: 1; min-width: 200px;">
-                            <label style="font-size: 13px; font-weight: bold;">Cliente:</label>
-                            <select id="filter-client" style="margin-top: 4px;">
-                                <option value="">Todos os clientes</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Filtro por Tipo de Manutenção -->
-                        <div style="flex: 1; min-width: 160px;">
-                            <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
-                            <select id="filter-type" style="margin-top: 4px;">
-                                <option value="">Todos os tipos</option>
-                                <option value="Corretiva">Corretiva</option>
-                                <option value="Preventiva">Preventiva</option>
-                                <option value="Garantia">Garantia</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                        <!-- Data Início -->
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 13px; font-weight: bold;">Data Início:</label>
-                            <input type="date" id="filter-start" style="margin-top: 4px;">
-                        </div>
-                        
-                        <!-- Data Fim -->
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 13px; font-weight: bold;">Data Fim:</label>
-                            <input type="date" id="filter-end" style="margin-top: 4px;">
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <!-- Filtro por Cliente -->
+                            <div style="flex: 1; min-width: 180px;">
+                                <label style="font-size: 12px; font-weight: bold;">Cliente:</label>
+                                <select id="filter-client" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
+                                    <option value="">Todos os clientes</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Filtro por Tipo de Manutenção -->
+                            <div style="flex: 1; min-width: 140px;">
+                                <label style="font-size: 12px; font-weight: bold;">Tipo:</label>
+                                <select id="filter-type" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
+                                    <option value="">Todos os tipos</option>
+                                    <option value="Corretiva">Corretiva</option>
+                                    <option value="Preventiva">Preventiva</option>
+                                    <option value="Garantia">Garantia</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <!-- Botão Aplicar -->
-                        <div>
-                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px; color: white; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                            <!-- Data Início -->
+                            <div style="flex: 1; min-width: 130px;">
+                                <label style="font-size: 12px; font-weight: bold;">Início:</label>
+                                <input type="date" id="filter-start" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
+                            </div>
+                            
+                            <!-- Data Fim -->
+                            <div style="flex: 1; min-width: 130px;">
+                                <label style="font-size: 12px; font-weight: bold;">Fim:</label>
+                                <input type="date" id="filter-end" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
+                            </div>
+
+                            <!-- Botão Aplicar -->
+                            <div>
+                                <button type="button" id="apply-filters" style="padding: 7px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">Filtrar</button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </details>
 
                 <!-- Lista de Ordens de Serviço -->
-                <div style="margin-top: 25px;">
+                <div style="margin-top: 20px;">
                     <div id="history-list">
                         <p style="color: #666; text-align: center;">A carregar histórico...</p>
                     </div>
@@ -291,16 +295,17 @@
 
         async function getBase64ImageFromUrl(imageUrl) {
             try {
-                const response = await fetch(imageUrl);
+                const response = await fetch(imageUrl, { mode: 'cors' });
+                if (!response.ok) return null;
                 const blob = await response.blob();
-                return new Promise((resolve, reject) => {
+                return new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
+                    reader.onerror = () => resolve(null);
                     reader.readAsDataURL(blob);
                 });
             } catch (e) {
-                console.warn("Não foi possível carregar a imagem:", imageUrl, e);
+                console.warn("Aviso: Não foi possível carregar a imagem para o PDF:", imageUrl);
                 return null;
             }
         }
@@ -637,7 +642,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // Fotografias / Anexos (Grelha compacta de imagens lado a lado)
+                // Fotografias / Anexos (Grelha segura de imagens)
                 const listaImagens = order.imageUrls || (order.imageUrl ? [order.imageUrl] : []);
                 if (listaImagens.length > 0) {
                     if (y > 200) {
@@ -675,7 +680,7 @@
                             docPDF.addImage(imgBase64, 'JPEG', imgX, imgY, 80, 50);
                             if (50 > maxAlt) maxAlt = 50;
 
-                            imgX += 88; // Desloca para a direita para a próxima foto na mesma linha
+                            imgX += 88;
                         }
                     }
                     y = imgY + maxAlt + 10;
