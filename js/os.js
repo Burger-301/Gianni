@@ -55,7 +55,7 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// Função para efetuar upload de múltiplos ficheiros para o ImgBB
+// Função para efetuar upload de múltiplos ficheiros para o ImgBB com a tua chave integrada
 async function uploadMultiplosParaImgBB(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -63,14 +63,7 @@ async function uploadMultiplosParaImgBB(fileInputId) {
     }
 
     const imageUrls = [];
-    
-    // ATENÇÃO: Substitui o texto abaixo pela tua chave real da API do ImgBB (ex: "a1b2c3d4...")
-    const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; 
-
-    if (apiKey === "COLOCA_AQUI_A_TUA_CHAVE_IMGBB") {
-        alert("Aviso: A chave da API do ImgBB não está configurada em 'js/os.js'. As fotografias não serão enviadas.");
-        return [];
-    }
+    const apiKey = "760f9d5337196e65847ca8351f92398f"; // A tua chave real do ImgBB
 
     for (let i = 0; i < fileInput.files.length; i++) {
         const file = fileInput.files[i];
