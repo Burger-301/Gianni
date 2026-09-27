@@ -293,7 +293,6 @@
             return payload + crcHex;
         }
 
-        // Método robusto por Image Object para evitar bloqueios de CORS e falhas no PDF
         function getBase64ImageFromUrl(url) {
             return new Promise((resolve) => {
                 if (!url) {
@@ -376,18 +375,23 @@
                 const fimManhaFmt = formatarDataHora(order.timeEndManha);
                 const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
                 const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
-                const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
+                const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente</span>';
                 
                 const temFotos = (order.imageUrls && order.imageUrls.length > 0) || order.imageUrl;
-                const badgeAnexo = temFotos ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📷 Com Anexo(s)</span>` : '';
+                // Ajustado com white-space: nowrap para evitar que a etiqueta quebre de linha no telemóvel
+                const badgeAnexo = temFotos ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; display: inline-block; margin-top: 2px;">📷 Com Anexo(s)</span>` : '';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 16px; color: #2c3e50;">${clientName} ${badgeAnexo}</strong>
-                            <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px;">
+                            <div style="flex: 1;">
+                                <strong style="font-size: 16px; color: #2c3e50; display: block; word-break: break-word;">${clientName}</strong>
+                                ${badgeAnexo}
+                            </div>
+                            <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; white-space: nowrap;">${order.serviceNature || 'Corretiva'}</span>
                         </div>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
+                        
+                        <p style="margin: 6px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
                         <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Manhã:</strong> ${inicioManhaFmt} até ${fimManhaFmt}</p>
                         <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Tarde:</strong> ${inicioTardeFmt} até ${fimTardeFmt}</p>
                         <p style="margin: 4px 0; font-size: 13px; color: #444;">
@@ -399,19 +403,22 @@
 
                         <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
 
-                        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                        <!-- Botões mobile totalmente otimizados e alinhados -->
+                        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; width: 100%;">
                                 📄 Gerar Relatório
                             </button>
-                            <button onclick="abrirModalHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                            <button onclick="abrirModalHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; width: 100%;">
                                 ⏱️ ${temEncerramento ? 'Editar Turnos/Encerramento' : 'Preencher Encerramento'}
                             </button>
-                            <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                ✏️ Editar
-                            </button>
-                            <button onclick="excluirOS('${order.id}')" style="background: #dc3545; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                🗑️ Excluir
-                            </button>
+                            <div style="display: flex; gap: 8px; width: 100%;">
+                                <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; flex: 1;">
+                                    ✏️ Editar
+                                </button>
+                                <button onclick="excluirOS('${order.id}')" style="background: #dc3545; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; flex: 1;">
+                                    🗑️ Excluir
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
