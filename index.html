@@ -162,7 +162,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Negrito em Tipo/Descrição e Firebase -->
+    <!-- Script Principal com Nomes Dinâmicos de Ficheiros PDF -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -657,7 +657,7 @@
 
                 y += 12;
 
-                // DADOS BANCÁRIOS & QR CODE PIX (Texto atualizado para "Escaneie para pagar com PIX")
+                // DADOS BANCÁRIOS & QR CODE PIX
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -701,7 +701,17 @@
                 }
 
                 const pdfBlob = docPDF.output('blob');
-                const fileName = `Relatorio_RG_${osId.substring(0, 6)}.pdf`;
+
+                // CRIAR NOME DO FICHEIRO DINÂMICO (Nome do Cliente + Data)
+                const rawClientName = clientInfo.name || order.clientName || "Cliente";
+                const safeClientName = rawClientName.replace(/[^a-zA-Z0-9]/g, "_");
+                const refDateStr = order.timeStartManha || order.timeStart || new Date();
+                const dPdf = new Date(refDateStr);
+                const anoPdf = dPdf.getFullYear();
+                const mesPdf = String(dPdf.getMonth() + 1).padStart(2, '0');
+                const diaPdf = String(dPdf.getDate()).padStart(2, '0');
+                
+                const fileName = `Relatorio_${safeClientName}_${anoPdf}-${mesPdf}-${diaPdf}.pdf`;
                 const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
                 if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
