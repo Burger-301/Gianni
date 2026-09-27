@@ -55,15 +55,15 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// Função para enviar imagem para o ImgBB e retornar o URL direto
+// Função para enviar imagem para o ImgBB
 async function uploadParaImgBB(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        return ""; // Sem anexo
+        return ""; 
     }
 
     const file = fileInput.files[0];
-    const apiKey = "760f9d5337196e65847ca8351f92398f"; // Chave de API ImgBB integrada
+    const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; // Insere aqui a tua chave da API do ImgBB
     
     const formData = new FormData();
     formData.append("image", file);
@@ -76,7 +76,7 @@ async function uploadParaImgBB(fileInputId) {
         
         const data = await response.json();
         if (data.success) {
-            return data.data.url; // Retorna o link direto da nuvem
+            return data.data.url; 
         } else {
             console.error("Falha no ImgBB:", data);
             alert("Aviso: Não foi possível enviar a fotografia. A O.S. será guardada sem anexo.");
@@ -126,9 +126,7 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
-    // Efetua o upload da imagem para o ImgBB antes de gravar no Firestore
     const imageUrl = await uploadParaImgBB('os-image');
-
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
     const timeStartManha = document.getElementById('time-start-manha').value;
@@ -159,7 +157,7 @@ form.addEventListener('submit', async (e) => {
         totalValue: calc.totalValue,
         description: document.getElementById('description').value,
         paymentTerms: document.getElementById('payment-terms').value,
-        imageUrl: imageUrl || "", // Link da fotografia na nuvem
+        imageUrl: imageUrl || "", 
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),
         customerSignature: clientPad.toDataURL(),
@@ -173,7 +171,7 @@ form.addEventListener('submit', async (e) => {
         techPad.clear();
         clientPad.clear();
         
-        window.location.href = "historico.html";
+        window.location.href = "index.html"; // Redireciona para o histórico/início
     } catch (error) {
         console.error("Erro ao guardar O.S.: ", error);
         alert("Ocorreu um erro ao gravar a O.S. Verifica a consola.");
