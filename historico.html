@@ -164,7 +164,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Logótipo e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF com Logótipo, PIX Automático e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -232,7 +232,7 @@
             if (minutosTotais < 0) minutosTotais = 0;
 
             const horasDecimais = minutosTotais / 60;
-            const valorTotal = horasDecimais * 200.00; // R$ 200,00 por hora interno
+            const valorTotal = horasDecimais * 200.00; // R$ 200,00 por hora
 
             const horasExatas = Math.floor(minutosTotais / 60);
             const minutosRestantes = minutosTotais % 60;
@@ -243,6 +243,51 @@
                 totalHoursText: formatadoTexto,
                 totalValue: valorTotal.toFixed(2)
             };
+        }
+
+        // Função para gerar o Payload PIX (BR Code) oficial do Banco Central
+        function gerarPayloadPix(chave, nome, cidade, valor, txid = "***") {
+            const format = (id, val) => {
+                const len = String(val.length).padStart(2, '0');
+                return `${id}${len}${val}`;
+            };
+
+            const normalize = (str) => {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            };
+
+            nome = normalize(nome).substring(0, 25);
+            cidade = normalize(cidade).substring(0, 15);
+
+            let gui = format("00", "br.gov.bcb.pix");
+            let key = format("01", chave);
+            let merchantAccountInformation = format("26", gui + key);
+            
+            let mcc = format("52", "0000");
+            let currency = format("53", "986");
+            let amountStr = format("54", Number(valor).toFixed(2));
+            let country = format("58", "BR");
+            let merchantName = format("59", nome);
+            let merchantCity = format("60", cidade);
+            let additionalDataField = format("62", format("05", txid));
+            
+            let payloadWithoutCrc = merchantAccountInformation + mcc + currency + amountStr + country + merchantName + merchantCity + additionalDataField;
+            let payload = format("00", "01") + payloadWithoutCrc + "6304";
+            
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) !== 0) {
+                        crc = ((crc << 1) ^ 0x1021);
+                    } else {
+                        crc = (crc << 1);
+                    }
+                    crc &= 0xFFFF;
+                }
+            }
+            let crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
+            return payload + crcHex;
         }
 
         async function getBase64ImageFromUrl(imageUrl) {
@@ -256,7 +301,7 @@
                     reader.readAsDataURL(blob);
                 });
             } catch (e) {
-                console.warn("Não foi possível carregar o logótipo para o PDF:", e);
+                console.warn("Não foi possível carregar a imagem:", imageUrl, e);
                 return null;
             }
         }
@@ -314,7 +359,6 @@
                 const fimManhaFmt = formatarDataHora(order.timeEndManha);
                 const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
                 
-                // A ordem encerra ao preencher a data e hora final da tarde (timeEndTarde)
                 const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
                 const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
 
@@ -481,9 +525,13 @@
 
                 const empresa = {
                     nome: "RG Soluções Técnicas",
-                    razaoSocial: "RG Soluções Técnicas Ltda",
+                    razaoSocial: "RG SOLUCOES TECNICAS LTDA",
                     email: "gcrodeghiero@gmail.com",
-                    cnpj: "54.875.741/0001-45"
+                    cnpj: "54.875.741/0001-45",
+                    banco: "748 - Sicredi",
+                    agencia: "0663",
+                    conta: "59490-8",
+                    cidade: "Porto Alegre"
                 };
 
                 const dataEmissao = new Date().toLocaleDateString('pt-BR');
@@ -599,7 +647,34 @@
                 docPDF.setFontSize(9);
                 docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
 
-                y += 20;
+                y += 12;
+
+                // DADOS BANCÁRIOS & QR CODE PIX AUTOMÁTICO
+                docPDF.setFillColor(230, 235, 245);
+                docPDF.rect(20, y, 170, 7, 'F');
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(10);
+                docPDF.text("Dados Bancários / Pagamento PIX", 22, y + 5);
+
+                y += 7;
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(9);
+                docPDF.text(`Banco: ${empresa.banco} | Agência: ${empresa.agencia} | Conta: ${empresa.conta}`, 22, y + 5);
+                docPDF.text(`Chave PIX (CNPJ): ${empresa.cnpj}`, 22, y + 11);
+                docPDF.text(`Favorecido: ${empresa.razaoSocial}`, 22, y + 17);
+
+                // Gerar payload PIX com o valor exato da ordem e buscar o QR Code gerado automaticamente
+                const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${osId.substring(0, 6)}`);
+                const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixPayload)}`;
+                
+                const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
+                if (pixBase64) {
+                    docPDF.addImage(pixBase64, 'PNG', 145, y - 2, 24, 24);
+                    docPDF.setFontSize(7);
+                    docPDF.text("PIX (Escaneie)", 148, y + 25);
+                }
+
+                y += 26;
 
                 // Assinaturas
                 docPDF.setLineWidth(0.2);
@@ -646,7 +721,7 @@
 
             } catch (error) {
                 console.error("Erro ao gerar o relatório PDF:", error);
-                alert("Ocorreu um erro ao processar o relatório.");
+                alert("Ocorreu an erro ao processar o relatório.");
             }
         };
 
