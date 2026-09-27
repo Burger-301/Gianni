@@ -14,7 +14,7 @@
                 <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
             </div>
             <nav>
-                <a href="historico.html">🏠 Início / Histórico</a>
+                <a href="index.html">🏠 Início / Histórico</a>
                 <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
                 <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
@@ -23,15 +23,13 @@
 
         <!-- Conteúdo Principal -->
         <main class="main-content">
-            <!-- Botão de menu hambúrguer para telemóveis -->
             <button class="menu-toggle" id="menuToggle">☰ Menu</button>
 
             <div class="container" style="max-width: 800px;">
-                <a href="historico.html" class="voltar">⬅ Voltar ao Histórico</a>
+                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
                 
                 <h2>Gestão de Clientes</h2>
 
-                <!-- Formulário para Cadastrar ou Editar Cliente -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd;">
                     <h3 id="form-title" style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Novo Cliente</h3>
                     
@@ -64,7 +62,6 @@
                     </form>
                 </div>
 
-                <!-- Lista de Clientes Registados -->
                 <div style="margin-top: 30px;">
                     <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Clientes Registados</h3>
                     <div id="clients-list">
@@ -75,7 +72,6 @@
         </main>
     </div>
 
-    <!-- Script de Gestão, Autenticação, Menu, Registo, Edição e Exclusão de Clientes -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -93,7 +89,6 @@
                 sidebar.classList.toggle('active');
             });
 
-            // Fechar o menu ao clicar fora dele
             document.addEventListener('click', (event) => {
                 if (sidebar.classList.contains('active')) {
                     if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
@@ -115,7 +110,7 @@
         const btnSubmitClient = document.getElementById('btn-submit-client');
         const btnCancelEdit = document.getElementById('btn-cancel-edit');
 
-        let editingClientId = null; // Variável para controlar se estamos a editar um cliente
+        let editingClientId = null;
 
         async function loadClients() {
             try {
@@ -161,7 +156,6 @@
             }
         }
 
-        // Função global para preencher o formulário para edição
         window.prepararEdicao = function(id, name, email, documentVal, address) {
             editingClientId = id;
             document.getElementById('client-name').value = name;
@@ -178,7 +172,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // Botão para cancelar a edição
         btnCancelEdit.addEventListener('click', () => {
             resetForm();
         });
@@ -193,7 +186,6 @@
             btnCancelEdit.style.display = "none";
         }
 
-        // Função global para excluir cliente
         window.excluirCliente = async function(clientId) {
             if (confirm("Tem certeza de que deseja excluir este cliente?")) {
                 try {
@@ -217,7 +209,6 @@
 
             try {
                 if (editingClientId) {
-                    // Atualizar cliente existente
                     const clientRef = doc(db, "clients", editingClientId);
                     await updateDoc(clientRef, {
                         name: name,
@@ -227,7 +218,6 @@
                     });
                     alert("Cliente atualizado com sucesso!");
                 } else {
-                    // Adicionar novo cliente
                     await addDoc(collection(db, "clients"), {
                         name: name,
                         email: email,
