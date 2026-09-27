@@ -63,7 +63,7 @@ async function uploadParaImgBB(fileInputId) {
     }
 
     const file = fileInput.files[0];
-    const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; // Substitui pela tua chave gratuita do ImgBB (api.imgbb.com)
+    const apiKey = "760f9d5337196e65847ca8351f92398f"; // Chave de API ImgBB integrada
     
     const formData = new FormData();
     formData.append("image", file);
