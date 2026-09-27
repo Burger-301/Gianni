@@ -1,515 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
-<body>
-    <div class="app-container">
-        <!-- Menu Lateral (Sidebar) com o Logótipo -->
-        <aside class="sidebar">
-            <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
-                <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
-            </div>
-            <nav>
-                <a href="historico.html" class="active">🏠 Início / Histórico</a>
-                <a href="clientes.html">👥 Gestão de Clientes</a>
-                <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
-                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
-            </nav>
-        </aside>
-
-        <!-- Conteúdo Principal -->
-        <main class="main-content">
-            <!-- Botão de menu para telemóveis -->
-            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
-
-            <div class="container" style="max-width: 800px;">
-                <h2>Histórico de Ordens de Serviço</h2>
-                
-                <!-- Secção de Filtros de Pesquisa -->
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3 style="font-size: 16px; margin-top: 0; color: #2c3e50;">Filtros de Pesquisa</h3>
-                    
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                        <!-- Filtro por Cliente -->
-                        <div style="flex: 1; min-width: 200px;">
-                            <label style="font-size: 13px; font-weight: bold;">Cliente:</label>
-                            <select id="filter-client" style="margin-top: 4px;">
-                                <option value="">Todos os clientes</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Filtro por Tipo de Manutenção -->
-                        <div style="flex: 1; min-width: 160px;">
-                            <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
-                            <select id="filter-type" style="margin-top: 4px;">
-                                <option value="">Todos os tipos</option>
-                                <option value="Corretiva">Corretiva</option>
-                                <option value="Preventiva">Preventiva</option>
-                                <option value="Garantia">Garantia</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                        <!-- Data Início -->
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 13px; font-weight: bold;">Data Início:</label>
-                            <input type="date" id="filter-start" style="margin-top: 4px;">
-                        </div>
-                        
-                        <!-- Data Fim -->
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 13px; font-weight: bold;">Data Fim:</label>
-                            <input type="date" id="filter-end" style="margin-top: 4px;">
-                        </div>
-
-                        <!-- Botão Aplicar -->
-                        <div>
-                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px; color: white; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Lista de Ordens de Serviço -->
-                <div style="margin-top: 25px;">
-                    <div id="history-list">
-                        <p style="color: #666; text-align: center;">A carregar histórico...</p>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Modal Personalizado para Atualizar Turnos -->
-    <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
-        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Atualizar Turnos e Encerramento</h3>
-            
-            <div style="margin-bottom: 10px;">
-                <label style="font-size: 12px; font-weight: bold;">Início Manhã:</label>
-                <input type="datetime-local" id="modal-start-manha" style="width: 100%; padding: 6px; box-sizing: border-box;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <label style="font-size: 12px; font-weight: bold;">Final Manhã:</label>
-                <input type="datetime-local" id="modal-end-manha" style="width: 100%; padding: 6px; box-sizing: border-box;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <label style="font-size: 12px; font-weight: bold;">Início Tarde:</label>
-                <input type="datetime-local" id="modal-start-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
-            </div>
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 12px; font-weight: bold;">Final Tarde (Encerramento da O.S.):</label>
-                <input type="datetime-local" id="modal-end-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
-            </div>
-            
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="btn-cancelar-modal" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                <button type="button" id="btn-salvar-modal" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar e Recalcular</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Editar Ordem de Serviço -->
-    <div id="modal-editar-os" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
-        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Editar Ordem de Serviço</h3>
-            
-            <div style="margin-bottom: 12px;">
-                <label style="font-size: 13px; font-weight: bold;">Equipamento:</label>
-                <input type="text" id="edit-equipment" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
-            </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                <div style="flex: 1;">
-                    <label style="font-size: 13px; font-weight: bold;">Marca:</label>
-                    <input type="text" id="edit-brand" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-size: 13px; font-weight: bold;">Modelo:</label>
-                    <input type="text" id="edit-model" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
-                </div>
-            </div>
-            <div style="margin-bottom: 12px;">
-                <label style="font-size: 13px; font-weight: bold;">Matrícula / N° de Série:</label>
-                <input type="text" id="edit-serial" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
-            </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                <div style="flex: 1;">
-                    <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
-                    <select id="edit-nature" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
-                        <option value="Corretiva">Corretiva</option>
-                        <option value="Preventiva">Preventiva</option>
-                        <option value="Garantia">Garantia</option>
-                    </select>
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-size: 13px; font-weight: bold;">Condição Pagamento (dias):</label>
-                    <input type="text" id="edit-payment" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
-                </div>
-            </div>
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 13px; font-weight: bold;">Descrição do Serviço:</label>
-                <textarea id="edit-description" rows="3" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;"></textarea>
-            </div>
-            
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="btn-cancelar-edit" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                <button type="button" id="btn-salvar-edit" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Guardar Alterações</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script de Gestão, Filtros, PDF com Logótipo, Anexo e Firebase -->
-    <script type="module">
-        import { db, auth } from './js/firebase-config.js';
-        import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = 'login.html';
-        });
-
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.querySelector('.sidebar');
-        if (menuToggle && sidebar) {
-            menuToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sidebar.classList.toggle('active');
-            });
-
-            document.addEventListener('click', (event) => {
-                if (sidebar.classList.contains('active')) {
-                    if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
-                        sidebar.classList.remove('active');
-                    }
-                }
-            });
-        }
-
-        document.getElementById('btn-logout').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await signOut(auth);
-            window.location.href = 'login.html';
-        });
-
-        let allOrders = [];
-        let clientsMap = {};
-        let activeOsIdForHoraFim = null;
-        let activeOsIdForEdit = null;
-
-        function formatarDataHora(dateStr) {
-            if (!dateStr) return 'N/A';
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            const dia = String(d.getDate()).padStart(2, '0');
-            const mes = String(d.getMonth() + 1).padStart(2, '0');
-            const ano = d.getFullYear();
-            const hora = String(d.getHours()).padStart(2, '0');
-            const min = String(d.getMinutes()).padStart(2, '0');
-            return `${dia}/${mes}/${ano} às ${hora}:${min}`;
-        }
-
-        function calcularMinutosTrabalhados(startM, endM, startT, endT) {
-            let minutosTotais = 0;
-
-            if (startM && endM) {
-                const diffM = new Date(endM) - new Date(startM);
-                if (diffM > 0) minutosTotais += diffM / (1000 * 60);
-            }
-
-            if (startT && endT) {
-                const diffT = new Date(endT) - new Date(startT);
-                if (diffT > 0) minutosTotais += diffT / (1000 * 60);
-            }
-
-            if (minutosTotais < 0) minutosTotais = 0;
-
-            const horasDecimais = minutosTotais / 60;
-            const valorTotal = horasDecimais * 200.00;
-
-            const horasExatas = Math.floor(minutosTotais / 60);
-            const minutosRestantes = minutosTotais % 60;
-            const formatadoTexto = `${horasExatas}h ${minutosRestantes}m`;
-
-            return {
-                totalHours: horasDecimais.toFixed(2),
-                totalHoursText: formatadoTexto,
-                totalValue: valorTotal.toFixed(2)
-            };
-        }
-
-        function gerarPayloadPix(chave, nome, cidade, valor, txid = "***") {
-            const chaveLimpa = chave.replace(/\D/g, '');
-
-            const format = (id, val) => {
-                const len = String(val.length).padStart(2, '0');
-                return `${id}${len}${val}`;
-            };
-
-            const normalize = (str) => {
-                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-            };
-
-            nome = normalize(nome).substring(0, 25);
-            cidade = normalize(cidade).substring(0, 15);
-
-            let gui = format("00", "br.gov.bcb.pix");
-            let key = format("01", chaveLimpa);
-            let merchantAccountInformation = format("26", gui + key);
-            
-            let mcc = format("52", "0000");
-            let currency = format("53", "986");
-            let amountStr = format("54", Number(valor).toFixed(2));
-            let country = format("58", "BR");
-            let merchantName = format("59", nome);
-            let merchantCity = format("60", cidade);
-            let additionalDataField = format("62", format("05", txid));
-            
-            let payloadWithoutCrc = merchantAccountInformation + mcc + currency + amountStr + country + merchantName + merchantCity + additionalDataField;
-            let payload = format("00", "01") + payloadWithoutCrc + "6304";
-            
-            let crc = 0xFFFF;
-            for (let i = 0; i < payload.length; i++) {
-                crc ^= payload.charCodeAt(i) << 8;
-                for (let j = 0; j < 8; j++) {
-                    if ((crc & 0x8000) !== 0) {
-                        crc = ((crc << 1) ^ 0x1021);
-                    } else {
-                        crc = (crc << 1);
-                    }
-                    crc &= 0xFFFF;
-                }
-            }
-            let crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
-            return payload + crcHex;
-        }
-
-        async function getBase64ImageFromUrl(imageUrl) {
-            try {
-                const response = await fetch(imageUrl);
-                const blob = await response.blob();
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            } catch (e) {
-                console.warn("Não foi possível carregar a imagem:", imageUrl, e);
-                return null;
-            }
-        }
-
-        async function loadClientsFilter() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "clients"));
-                const selectClient = document.getElementById('filter-client');
-                querySnapshot.forEach((docSnap) => {
-                    const client = docSnap.data();
-                    clientsMap[docSnap.id] = client;
-                    const option = document.createElement('option');
-                    option.value = docSnap.id;
-                    option.textContent = client.name || client.razaoSocial;
-                    selectClient.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Erro ao carregar clientes para o filtro:", error);
-            }
-        }
-
-        async function loadHistory() {
-            const historyListDiv = document.getElementById('history-list');
-            try {
-                const q = query(collection(db, "service_orders"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-                
-                allOrders = [];
-                querySnapshot.forEach((docSnap) => {
-                    allOrders.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                renderHistory(allOrders);
-            } catch (error) {
-                console.error("Erro ao carregar histórico:", error);
-                historyListDiv.innerHTML = "<p style='color: red;'>Erro ao carregar os dados do histórico.</p>";
-            }
-        }
-
-        function renderHistory(orders) {
-            const historyListDiv = document.getElementById('history-list');
-            historyListDiv.innerHTML = "";
-
-            if (orders.length === 0) {
-                historyListDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 20px;'>Nenhuma Ordem de Serviço encontrada com os filtros selecionados.</p>";
-                return;
-            }
-
-            let html = "";
-            orders.forEach(order => {
-                const clientInfo = clientsMap[order.clientId] || {};
-                const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
-                
-                const inicioManhaFmt = formatarDataHora(order.timeStartManha || order.timeStart);
-                const fimManhaFmt = formatarDataHora(order.timeEndManha);
-                const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
-                const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
-                const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
-                
-                const badgeAnexo = order.imageUrl ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📷 Com Anexo</span>` : '';
-
-                html += `
-                    <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 16px; color: #2c3e50;">${clientName} ${badgeAnexo}</strong>
-                            <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
-                        </div>
-                        <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
-                        <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Manhã:</strong> ${inicioManhaFmt} até ${fimManhaFmt}</p>
-                        <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Tarde:</strong> ${inicioTardeFmt} até ${fimTardeFmt}</p>
-                        <p style="margin: 4px 0; font-size: 13px; color: #444;">
-                            <strong>Total Horas:</strong> ${order.totalHoursText || order.totalHours || '0'}h | <strong>Pagamento:</strong> Para ${order.paymentTerms || '-'} dias
-                        </p>
-                        <p style="margin: 4px 0; font-size: 14px;">
-                            <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">R$ ${order.totalValue || '0.00'}</span>
-                        </p>
-
-                        <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
-
-                        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                📄 Gerar Relatório
-                            </button>
-                            <button onclick="abrirModalHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                ⏱️ ${temEncerramento ? 'Editar Turnos/Encerramento' : 'Preencher Encerramento'}
-                            </button>
-                            <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                ✏️ Editar
-                            </button>
-                            <button onclick="excluirOS('${order.id}')" style="background: #dc3545; color: white; border: none; padding: 8px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold;">
-                                🗑️ Excluir
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            historyListDiv.innerHTML = html;
-        }
-
-        window.abrirModalHoraFim = function(osId) {
-            activeOsIdForHoraFim = osId;
-            const order = allOrders.find(item => item.id === osId);
-            if (!order) return;
-
-            document.getElementById('modal-start-manha').value = order.timeStartManha || order.timeStart || '';
-            document.getElementById('modal-end-manha').value = order.timeEndManha || '';
-            document.getElementById('modal-start-tarde').value = order.timeStartTarde || '';
-            document.getElementById('modal-end-tarde').value = order.timeEndTarde || '';
-
-            document.getElementById('modal-hora-fim').style.display = 'flex';
-        };
-
-        document.getElementById('btn-cancelar-modal').addEventListener('click', () => {
-            document.getElementById('modal-hora-fim').style.display = 'none';
-            activeOsIdForHoraFim = null;
-        });
-
-        document.getElementById('btn-salvar-modal').addEventListener('click', async () => {
-            const startM = document.getElementById('modal-start-manha').value;
-            const endM = document.getElementById('modal-end-manha').value;
-            const startT = document.getElementById('modal-start-tarde').value;
-            const endT = document.getElementById('modal-end-tarde').value;
-
-            const calc = calcularMinutosTrabalhados(startM, endM, startT, endT);
-
-            try {
-                const docRef = doc(db, "service_orders", activeOsIdForHoraFim);
-                await updateDoc(docRef, {
-                    timeStartManha: startM,
-                    timeEndManha: endM,
-                    timeStartTarde: startT,
-                    timeEndTarde: endT,
-                    timeEnd: endT,
-                    totalHours: calc.totalHours,
-                    totalHoursText: calc.totalHoursText,
-                    totalValue: calc.totalValue
-                });
-
-                document.getElementById('modal-hora-fim').style.display = 'none';
-                alert("Turnos e encerramento atualizados com sucesso!");
-                loadHistory();
-            } catch (error) {
-                console.error("Erro ao atualizar turnos:", error);
-                alert("Ocorreu um erro ao atualizar os dados.");
-            }
-        });
-
-        window.abrirModalEditar = function(osId) {
-            activeOsIdForEdit = osId;
-            const order = allOrders.find(item => item.id === osId);
-            if (!order) return;
-
-            document.getElementById('edit-equipment').value = order.equipment || '';
-            document.getElementById('edit-brand').value = order.brand || '';
-            document.getElementById('edit-model').value = order.model || '';
-            document.getElementById('edit-serial').value = order.serialNumber || '';
-            document.getElementById('edit-nature').value = order.serviceNature || 'Corretiva';
-            document.getElementById('edit-payment').value = order.paymentTerms || '';
-            document.getElementById('edit-description').value = order.description || '';
-
-            document.getElementById('modal-editar-os').style.display = 'flex';
-        };
-
-        document.getElementById('btn-cancelar-edit').addEventListener('click', () => {
-            document.getElementById('modal-editar-os').style.display = 'none';
-            activeOsIdForEdit = null;
-        });
-
-        document.getElementById('btn-salvar-edit').addEventListener('click', async () => {
-            const osId = activeOsIdForEdit;
-            if (!osId) return;
-
-            const updatedData = {
-                equipment: document.getElementById('edit-equipment').value,
-                brand: document.getElementById('edit-brand').value,
-                model: document.getElementById('edit-model').value,
-                serialNumber: document.getElementById('edit-serial').value,
-                serviceNature: document.getElementById('edit-nature').value,
-                paymentTerms: document.getElementById('edit-payment').value,
-                description: document.getElementById('edit-description').value
-            };
-
-            try {
-                const docRef = doc(db, "service_orders", osId);
-                await updateDoc(docRef, updatedData);
-
-                document.getElementById('modal-editar-os').style.display = 'none';
-                alert("Ordem de Serviço atualizada com sucesso!");
-                loadHistory();
-            } catch (error) {
-                console.error("Erro ao atualizar O.S.:", error);
-                alert("Ocorreu um erro ao atualizar a Ordem de Serviço.");
-            }
-        });
-
-        window.excluirOS = async function(osId) {
-            if (confirm("Tem a certeza de que pretende eliminar esta Ordem de Serviço do histórico?")) {
-                try {
-                    await deleteDoc(doc(db, "service_orders", osId));
-                    alert("Ordem de Serviço eliminada com sucesso!");
-                    loadHistory();
-                } catch (error) {
-                    console.error("Erro ao eliminar O.S.:", error);
-                    alert("Ocorreu um erro ao eliminar a Ordem de Serviço.");
-                }
-            }
-        };
-
-        window.gerarEPartilharPDF = async function(osId) {
+window.gerarEPartilharPDF = async function(osId) {
             try {
                 const order = allOrders.find(item => item.id === osId);
                 if (!order) {
@@ -625,29 +114,66 @@
                 const splitDescription = docPDF.splitTextToSize(descText, 165);
                 docPDF.text(splitDescription, 22, y);
 
-                y += (splitDescription.length * 5) + 8;
+                y += (splitDescription.length * 5) + 6;
 
-                // Se houver fotografia anexa, adiciona uma nova página no PDF para mostrar o anexo com alta qualidade
-                if (order.imageUrl) {
-                    const imgBase64 = await getBase64ImageFromUrl(order.imageUrl);
-                    if (imgBase64) {
+                // Fotografias / Anexos (Compactas, exibidas lado a lado se houver mais do que uma)
+                const imagensArray = order.imageUrls || (order.imageUrl ? [order.imageUrl] : []);
+                if (imagensArray.length > 0) {
+                    if (y > 200) {
                         docPDF.addPage();
-                        docPDF.setFillColor(230, 235, 245);
-                        docPDF.rect(20, 15, 170, 7, 'F');
-                        docPDF.setFont("helvetica", "bold");
-                        docPDF.setFontSize(10);
-                        docPDF.text("Fotografia / Anexo do Equipamento", 22, y = 20);
-                        
-                        // Imagem centralizada no PDF
-                        docPDF.addImage(imgBase64, 'JPEG', 25, 26, 160, 110);
-                        y = 145; // Ajusta o y para continuar o restante abaixo se necessário
+                        y = 20;
                     }
+
+                    docPDF.setFillColor(230, 235, 245);
+                    docPDF.rect(20, y, 170, 6, 'F');
+                    docPDF.setFont("helvetica", "bold");
+                    docPDF.setFontSize(9);
+                    docPDF.text("Fotografia(s) / Anexo(s) do Equipamento", 22, y + 4);
+                    
+                    y += 8;
+
+                    let imgX = 20;
+                    let imgY = y;
+                    let maxAlturaLinha = 0;
+
+                    for (let i = 0; i <imagensArray.length; i++) {
+                        const imgBase64 = await getBase64ImageFromUrl(imagensArray[i]);
+                        if (imgBase64) {
+                            // Se passar da largura útil da página (2 imagens por linha: 80mm cada + 10mm de espaço)
+                            if (imgX + 80 > 190) {
+                                imgX = 20;
+                                imgY += maxAlturaLinha + 5;
+                                maxAlturaLinha = 0;
+                            }
+
+                            // Verifica se cabe na página verticalmente
+                            if (imgY + 50 > 270) {
+                                docPDF.addPage();
+                                imgY = 20;
+                                imgX = 20;
+                            }
+
+                            docPDF.addImage(imgBase64, 'JPEG', imgX, imgY, 80, 50);
+                            
+                            if (50 > maxAlturaLinha) maxAlturaLinha = 50;
+
+                            imgX += 90; // Move para a posição da próxima imagem na horizontal
+                        }
+                    }
+
+                    y = imgY + maxAlturaLinha + 10;
                 }
 
                 // Valor Total e Condição de Pagamento
+                if (y > 220) {
+                    docPDF.addPage();
+                    y = 20;
+                }
+
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(10);
                 docPDF.text("VALOR TOTAL", 22, y + 5);
 
                 y += 8;
@@ -664,6 +190,11 @@
                 y += 12;
 
                 // DADOS BANCÁRIOS & QR CODE PIX
+                if (y > 220) {
+                    docPDF.addPage();
+                    y = 20;
+                }
+
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -687,9 +218,14 @@
                     docPDF.text("Escaneie para pagar", 145, y + 25);
                 }
 
-                y += 42; 
+                y += 40; 
 
                 // Assinaturas
+                if (y > 240) {
+                    docPDF.addPage();
+                    y = 30;
+                }
+
                 docPDF.setLineWidth(0.2);
                 docPDF.line(20, y + 15, 90, y + 15);
                 docPDF.line(120, y + 15, 190, y + 15);
@@ -737,40 +273,3 @@
                 alert("Ocorreu um erro ao processar o relatório.");
             }
         };
-
-        document.getElementById('apply-filters').addEventListener('click', () => {
-            const selectedClient = document.getElementById('filter-client').value;
-            const selectedType = document.getElementById('filter-type').value;
-            const startDate = document.getElementById('filter-start').value;
-            const endDate = document.getElementById('filter-end').value;
-
-            const filtered = allOrders.filter(order => {
-                if (selectedClient && order.clientId !== selectedClient) {
-                    return false;
-                }
-                if (selectedType && order.serviceNature !== selectedType) {
-                    return false;
-                }
-                const refDate = order.timeStartManha || order.timeStart;
-                if (refDate) {
-                    const orderDateStr = refDate.split('T')[0];
-                    if (startDate && orderDateStr < startDate) {
-                        return false;
-                    }
-                    if (endDate && orderDateStr > endDate) {
-                        return false;
-                    }
-                }
-                return true;
-            });
-
-            renderHistory(filtered);
-        });
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            await loadClientsFilter();
-            await loadHistory();
-        });
-    </script>
-</body>
-</html>
