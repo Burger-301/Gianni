@@ -55,7 +55,40 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// Função de cálculo de minutos somando os turnos de manhã e tarde
+// Função para enviar imagem para o ImgBB e retornar o URL direto
+async function uploadParaImgBB(fileInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return ""; // Sem anexo
+    }
+
+    const file = fileInput.files[0];
+    const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; // Substitui pela tua chave gratuita do ImgBB (api.imgbb.com)
+    
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+            method: "POST",
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            return data.data.url; // Retorna o link direto da nuvem
+        } else {
+            console.error("Falha no ImgBB:", data);
+            alert("Aviso: Não foi possível enviar a fotografia. A O.S. será guardada sem anexo.");
+            return "";
+        }
+    } catch (error) {
+        console.error("Erro de rede no upload da imagem:", error);
+        alert("Aviso: Sem ligação para enviar a fotografia. A O.S. será guardada sem anexo.");
+        return "";
+    }
+}
+
 function calcularMinutosTrabalhados(startM, endM, startT, endT) {
     let minutosTotais = 0;
 
@@ -72,7 +105,7 @@ function calcularMinutosTrabalhados(startM, endM, startT, endT) {
     if (minutosTotais < 0) minutosTotais = 0;
 
     const horasDecimais = minutosTotais / 60;
-    const valorDasHoras = horasDecimais * VALOR_HORA_FIXO;
+    const valorTotal = horasDecimais * VALOR_HORA_FIXO;
 
     const horasExatas = Math.floor(minutosTotais / 60);
     const minutosRestantes = minutosTotais % 60;
@@ -81,7 +114,7 @@ function calcularMinutosTrabalhados(startM, endM, startT, endT) {
     return {
         totalHours: horasDecimais.toFixed(2),
         totalHoursText: formatadoTexto,
-        totalValue: valorDasHoras.toFixed(2)
+        totalValue: valorTotal.toFixed(2)
     };
 }
 
@@ -92,6 +125,9 @@ form.addEventListener('submit', async (e) => {
         alert("Ambas as assinaturas (Manutentor e Cliente) são obrigatórias.");
         return;
     }
+
+    // Efetua o upload da imagem para o ImgBB antes de gravar no Firestore
+    const imageUrl = await uploadParaImgBB('os-image');
 
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
@@ -116,13 +152,14 @@ form.addEventListener('submit', async (e) => {
         timeEndManha: timeEndManha || "",
         timeStartTarde: timeStartTarde || "",
         timeEndTarde: timeEndTarde || "",
-        timeEnd: timeEndTarde || "", // Mantém compatibilidade geral para encerramento
+        timeEnd: timeEndTarde || "",
         totalHours: calc.totalHours,
         totalHoursText: calc.totalHoursText,
         hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
         totalValue: calc.totalValue,
         description: document.getElementById('description').value,
         paymentTerms: document.getElementById('payment-terms').value,
+        imageUrl: imageUrl || "", // Link da fotografia na nuvem
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),
         customerSignature: clientPad.toDataURL(),
