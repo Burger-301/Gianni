@@ -31,53 +31,51 @@
             <div class="container" style="max-width: 800px;">
                 <h2>Histórico de Ordens de Serviço</h2>
                 
-                <!-- Secção de Filtros de Pesquisa -->
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3 style="font-size: 16px; margin-top: 0; color: #2c3e50;">Filtros de Pesquisa</h3>
+                <!-- Secção de Filtros de Pesquisa Compacta -->
+                <div style="background: #f8f9fa; padding: 12px 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ddd;">
+                    <h3 style="font-size: 14px; margin: 0 0 8px 0; color: #2c3e50;">Filtros de Pesquisa</h3>
                     
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
                         <!-- Filtro por Cliente -->
-                        <div style="flex: 1; min-width: 200px;">
-                            <label style="font-size: 13px; font-weight: bold;">Cliente:</label>
-                            <select id="filter-client" style="margin-top: 4px;">
+                        <div style="flex: 2; min-width: 140px;">
+                            <label style="font-size: 11px; font-weight: bold; color: #555;">Cliente:</label>
+                            <select id="filter-client" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
                                 <option value="">Todos os clientes</option>
                             </select>
                         </div>
                         
                         <!-- Filtro por Tipo de Manutenção -->
-                        <div style="flex: 1; min-width: 160px;">
-                            <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
-                            <select id="filter-type" style="margin-top: 4px;">
-                                <option value="">Todos os tipos</option>
+                        <div style="flex: 1; min-width: 110px;">
+                            <label style="font-size: 11px; font-weight: bold; color: #555;">Tipo:</label>
+                            <select id="filter-type" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
+                                <option value="">Todos</option>
                                 <option value="Corretiva">Corretiva</option>
                                 <option value="Preventiva">Preventiva</option>
                                 <option value="Garantia">Garantia</option>
                             </select>
                         </div>
-                    </div>
 
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
                         <!-- Data Início -->
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 13px; font-weight: bold;">Data Início:</label>
-                            <input type="date" id="filter-start" style="margin-top: 4px;">
+                        <div style="flex: 1; min-width: 110px;">
+                            <label style="font-size: 11px; font-weight: bold; color: #555;">Data Início:</label>
+                            <input type="date" id="filter-start" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
                         </div>
                         
                         <!-- Data Fim -->
-                        <div style="flex: 1; min-width: 140px;">
-                            <label style="font-size: 13px; font-weight: bold;">Data Fim:</label>
-                            <input type="date" id="filter-end" style="margin-top: 4px;">
+                        <div style="flex: 1; min-width: 110px;">
+                            <label style="font-size: 11px; font-weight: bold; color: #555;">Data Fim:</label>
+                            <input type="date" id="filter-end" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
                         </div>
 
                         <!-- Botão Aplicar -->
                         <div>
-                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px; color: white; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
+                            <button type="button" id="apply-filters" style="padding: 7px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">Filtrar</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Lista de Ordens de Serviço -->
-                <div style="margin-top: 25px;">
+                <div style="margin-top: 20px;">
                     <div id="history-list">
                         <p style="color: #666; text-align: center;">A carregar histórico...</p>
                     </div>
