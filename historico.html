@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.2">
+    <link rel="stylesheet" href="css/style.css?v=1.3">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -168,9 +168,9 @@
         </div>
     </div>
 
-    <!-- Script Principal com Cache Busting (v=1.2) -->
+    <!-- Script Principal com Cache Busting (v=1.3) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.2';
+        import { db, auth } from './js/firebase-config.js?v=1.3';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -218,7 +218,7 @@
             return `${dia}/${mes}/${ano} às ${hora}:${min}`;
         }
 
-        function calcularMinutosTrabalhados(startM, endM, startT, endT) {
+        function calcularMinutosTrabalhados(startM, endM, startT, endT, valorHoraFixo = 200.00) {
             let minutosTotais = 0;
 
             if (startM && endM) {
@@ -234,7 +234,7 @@
             if (minutosTotais < 0) minutosTotais = 0;
 
             const horasDecimais = minutosTotais / 60;
-            const valorTotal = horasDecimais * 200.00;
+            const valorHorasTotal = horasDecimais * Number(valorHoraFixo);
 
             const horasExatas = Math.floor(minutosTotais / 60);
             const minutosRestantes = minutosTotais % 60;
@@ -243,7 +243,7 @@
             return {
                 totalHours: horasDecimais.toFixed(2),
                 totalHoursText: formatadoTexto,
-                totalValue: valorTotal.toFixed(2)
+                valorHorasTotal: valorHorasTotal.toFixed(2)
             };
         }
 
@@ -448,7 +448,16 @@
             const startT = document.getElementById('modal-start-tarde').value;
             const endT = document.getElementById('modal-end-tarde').value;
 
-            const calc = calcularMinutosTrabalhados(startM, endM, startT, endT);
+            const order = allOrders.find(item => item.id === activeOsIdForHoraFim);
+            const valorHoraRef = order && order.valorHora ? parseFloat(order.valorHora) : 200.00;
+
+            const calc = calcularMinutosTrabalhados(startM, endM, startT, endT, valorHoraRef);
+
+            const valorHorasTotal = order && order.temHora === 'nao' ? 0 : parseFloat(calc.valorHorasTotal);
+            const valorKmTotal = order && order.valorKmTotal ? parseFloat(order.valorKmTotal) : 0;
+            const valorCombustivelTotal = order && order.valorCombustivelTotal ? parseFloat(order.valorCombustivelTotal) : 0;
+            
+            const novoTotalGeral = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
 
             try {
                 const docRef = doc(db, "service_orders", activeOsIdForHoraFim);
@@ -460,7 +469,8 @@
                     timeEnd: endT,
                     totalHours: calc.totalHours,
                     totalHoursText: calc.totalHoursText,
-                    totalValue: calc.totalValue
+                    valorHorasTotal: valorHorasTotal.toFixed(2),
+                    totalValue: novoTotalGeral
                 });
 
                 document.getElementById('modal-hora-fim').style.display = 'none';
@@ -704,7 +714,7 @@
                     y = imgY + maxAlt + 10;
                 }
 
-                // Valor Total e Condição de Pagamento
+                // VALOR TOTAL DINÂMICO
                 if (y > 220) {
                     docPDF.addPage();
                     y = 20;
@@ -718,11 +728,27 @@
 
                 y += 8;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`• Total Horas Trabalhadas: ${order.totalHoursText || order.totalHours + 'h' || '0h'}`, 22, y + 4);
-                docPDF.setFont("helvetica", "bold");
-                docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
+                docPDF.setFontSize(9);
 
-                y += 18;
+                let linhasDetalhe = 0;
+                if (order.temHora === 'sim') {
+                    docPDF.text(`• Total Horas Trabalhadas: ${order.totalHoursText || '0h'} (R$ ${order.valorHorasTotal || '0.00'})`, 22, y + (linhasDetalhe * 6));
+                    linhasDetalhe++;
+                }
+                if (order.temKm === 'sim') {
+                    docPDF.text(`• Deslocamento: ${order.totalKm || 0} Km (Ida: ${order.kmIda || 0} + Volta: ${order.kmVolta || 0}) - R$ ${order.valorKmTotal || '0.00'}`, 22, y + (linhasDetalhe * 6));
+                    linhasDetalhe++;
+                }
+                if (order.temCombustivel === 'sim') {
+                    docPDF.text(`• Combustível: ${order.combustivelLitros || 0} Litros - R$ ${order.valorCombustivelTotal || '0.00'}`, 22, y + (linhasDetalhe * 6));
+                    linhasDetalhe++;
+                }
+
+                y += (linhasDetalhe * 6) + 2;
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text(`• TOTAL GERAL: R$ ${order.totalValue || '0.00'}`, 22, y);
+
+                y += 12;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(9);
                 docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
