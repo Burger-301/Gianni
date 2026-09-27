@@ -164,7 +164,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Logótipo, PIX Automático e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF com Logótipo, Anexo e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -359,11 +359,13 @@
                 const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
                 const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
                 const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
+                
+                const badgeAnexo = order.imageUrl ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📷 Com Anexo</span>` : '';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 16px; color: #2c3e50;">${clientName}</strong>
+                            <strong style="font-size: 16px; color: #2c3e50;">${clientName} ${badgeAnexo}</strong>
                             <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
                         </div>
                         <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
@@ -625,6 +627,23 @@
 
                 y += (splitDescription.length * 5) + 8;
 
+                // Se houver fotografia anexa, adiciona uma nova página no PDF para mostrar o anexo com alta qualidade
+                if (order.imageUrl) {
+                    const imgBase64 = await getBase64ImageFromUrl(order.imageUrl);
+                    if (imgBase64) {
+                        docPDF.addPage();
+                        docPDF.setFillColor(230, 235, 245);
+                        docPDF.rect(20, 15, 170, 7, 'F');
+                        docPDF.setFont("helvetica", "bold");
+                        docPDF.setFontSize(10);
+                        docPDF.text("Fotografia / Anexo do Equipamento", 22, y = 20);
+                        
+                        // Imagem centralizada no PDF
+                        docPDF.addImage(imgBase64, 'JPEG', 25, 26, 160, 110);
+                        y = 145; // Ajusta o y para continuar o restante abaixo se necessário
+                    }
+                }
+
                 // Valor Total e Condição de Pagamento
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
@@ -644,7 +663,7 @@
 
                 y += 12;
 
-                // DADOS BANCÁRIOS & QR CODE PIX (Faixa azul de altura 7 padronizada)
+                // DADOS BANCÁRIOS & QR CODE PIX
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -658,7 +677,6 @@
                 docPDF.text(`• Chave PIX (CNPJ): ${empresa.cnpj}`, 22, y + 10);
                 docPDF.text(`• Favorecido: ${empresa.razaoSocial}`, 22, y + 16);
 
-                // Gerar payload PIX com CNPJ limpo e valor exato da ordem
                 const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${osId.substring(0, 6)}`);
                 const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixPayload)}`;
                 
@@ -669,7 +687,6 @@
                     docPDF.text("Escaneie para pagar", 145, y + 25);
                 }
 
-                // ESPAÇAMENTO AUMENTADO ANTES DAS ASSINATURAS
                 y += 42; 
 
                 // Assinaturas
