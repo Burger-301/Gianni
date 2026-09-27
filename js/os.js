@@ -63,7 +63,14 @@ async function uploadMultiplosParaImgBB(fileInputId) {
     }
 
     const imageUrls = [];
-    const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; // Insere aqui a tua chave da API do ImgBB
+    
+    // ATENÇÃO: Substitui o texto abaixo pela tua chave real da API do ImgBB (ex: "a1b2c3d4...")
+    const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; 
+
+    if (apiKey === "COLOCA_AQUI_A_TUA_CHAVE_IMGBB") {
+        alert("Aviso: A chave da API do ImgBB não está configurada em 'js/os.js'. As fotografias não serão enviadas.");
+        return [];
+    }
 
     for (let i = 0; i < fileInput.files.length; i++) {
         const file = fileInput.files[i];
@@ -81,9 +88,11 @@ async function uploadMultiplosParaImgBB(fileInputId) {
                 imageUrls.push(data.data.url);
             } else {
                 console.error("Falha no ImgBB para a imagem:", file.name, data);
+                alert(`Erro ao enviar a imagem ${file.name} para o servidor.`);
             }
         } catch (error) {
             console.error("Erro de rede no upload da imagem:", file.name, error);
+            alert(`Erro de ligação ao enviar a imagem ${file.name}.`);
         }
     }
 
