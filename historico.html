@@ -164,7 +164,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Logótipo, PIX Automático e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF com Logótipo, PIX Automático Corrigido e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -202,7 +202,6 @@
         let activeOsIdForHoraFim = null;
         let activeOsIdForEdit = null;
 
-        // Função para formatar data e hora para dd/mm/aaaa às hh:mm
         function formatarDataHora(dateStr) {
             if (!dateStr) return 'N/A';
             const d = new Date(dateStr);
@@ -215,7 +214,6 @@
             return `${dia}/${mes}/${ano} às ${hora}:${min}`;
         }
 
-        // Função de cálculo exato de minutos somando manhã + tarde
         function calcularMinutosTrabalhados(startM, endM, startT, endT) {
             let minutosTotais = 0;
 
@@ -232,7 +230,7 @@
             if (minutosTotais < 0) minutosTotais = 0;
 
             const horasDecimais = minutosTotais / 60;
-            const valorTotal = horasDecimais * 200.00; // R$ 200,00 por hora
+            const valorTotal = horasDecimais * 200.00;
 
             const horasExatas = Math.floor(minutosTotais / 60);
             const minutosRestantes = minutosTotais % 60;
@@ -245,8 +243,11 @@
             };
         }
 
-        // Função para gerar o Payload PIX (BR Code) oficial do Banco Central
+        // Função para gerar o Payload PIX oficial com CNPJ limpo (sem pontuação)
         function gerarPayloadPix(chave, nome, cidade, valor, txid = "***") {
+            // Remover pontos, barras e traços da chave PIX (CNPJ sem pontuação)
+            const chaveLimpa = chave.replace(/\D/g, '');
+
             const format = (id, val) => {
                 const len = String(val.length).padStart(2, '0');
                 return `${id}${len}${val}`;
@@ -260,7 +261,7 @@
             cidade = normalize(cidade).substring(0, 15);
 
             let gui = format("00", "br.gov.bcb.pix");
-            let key = format("01", chave);
+            let key = format("01", chaveLimpa);
             let merchantAccountInformation = format("26", gui + key);
             
             let mcc = format("52", "0000");
@@ -358,7 +359,6 @@
                 const inicioManhaFmt = formatarDataHora(order.timeStartManha || order.timeStart);
                 const fimManhaFmt = formatarDataHora(order.timeEndManha);
                 const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
-                
                 const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
                 const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
 
@@ -432,7 +432,7 @@
                     timeStartManha: startM,
                     timeEndManha: endM,
                     timeStartTarde: startT,
-                    timeEndTarde: endT, // Encerramento oficial da O.S.
+                    timeEndTarde: endT,
                     timeEnd: endT,
                     totalHours: calc.totalHours,
                     totalHoursText: calc.totalHoursText,
@@ -448,7 +448,6 @@
             }
         });
 
-        // Funções para Editar O.S.
         window.abrirModalEditar = function(osId) {
             activeOsIdForEdit = osId;
             const order = allOrders.find(item => item.id === osId);
@@ -497,7 +496,6 @@
             }
         });
 
-        // Função para Excluir O.S.
         window.excluirOS = async function(osId) {
             if (confirm("Tem a certeza de que pretende eliminar esta Ordem de Serviço do histórico?")) {
                 try {
@@ -587,7 +585,7 @@
 
                 y += 24;
 
-                // Horário / Turnos formatados no PDF
+                // Horários e Turnos
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -600,7 +598,7 @@
 
                 y += 18;
 
-                // EQUIPAMENTO
+                // Equipamento
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -615,7 +613,7 @@
 
                 y += 15;
 
-                // SERVIÇOS REALIZADOS
+                // Serviços realizados
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -629,7 +627,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // VALOR TOTAL
+                // Valor Total e Condição de Pagamento
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -641,7 +639,6 @@
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL: R$ ${order.totalValue || '0.00'}`, 22, y + 12);
 
-                // CONDIÇÃO DE PAGAMENTO
                 y += 18;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(9);
@@ -649,32 +646,32 @@
 
                 y += 12;
 
-                // DADOS BANCÁRIOS & QR CODE PIX AUTOMÁTICO
+                // DADOS BANCÁRIOS & QR CODE PIX CORRIGIDO E POSICIONADO
                 docPDF.setFillColor(230, 235, 245);
-                docPDF.rect(20, y, 170, 7, 'F');
+                docPDF.rect(20, y, 170, 24, 'F');
                 docPDF.setFont("helvetica", "bold");
                 docPDF.setFontSize(10);
-                docPDF.text("Dados Bancários / Pagamento PIX", 22, y + 5);
+                docPDF.text("Dados Bancários / Pagamento PIX", 22, y + 6);
 
-                y += 7;
+                y += 9;
                 docPDF.setFont("helvetica", "normal");
-                docPDF.setFontSize(9);
-                docPDF.text(`Banco: ${empresa.banco} | Agência: ${empresa.agencia} | Conta: ${empresa.conta}`, 22, y + 5);
-                docPDF.text(`Chave PIX (CNPJ): ${empresa.cnpj}`, 22, y + 11);
-                docPDF.text(`Favorecido: ${empresa.razaoSocial}`, 22, y + 17);
+                docPDF.setFontSize(8.5);
+                docPDF.text(`Banco: ${empresa.banco} | Agência: ${empresa.agencia} | Conta: ${empresa.conta}`, 22, y + 3);
+                docPDF.text(`Chave PIX (CNPJ): ${empresa.cnpj}`, 22, y + 9);
+                docPDF.text(`Favorecido: ${empresa.razaoSocial}`, 22, y + 15);
 
-                // Gerar payload PIX com o valor exato da ordem e buscar o QR Code gerado automaticamente
+                // Gerar payload PIX com CNPJ limpo e valor exato da ordem
                 const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${osId.substring(0, 6)}`);
                 const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixPayload)}`;
                 
                 const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
                 if (pixBase64) {
-                    docPDF.addImage(pixBase64, 'PNG', 145, y - 2, 24, 24);
-                    docPDF.setFontSize(7);
-                    docPDF.text("PIX (Escaneie)", 148, y + 25);
+                    docPDF.addImage(pixBase64, 'PNG', 148, y - 2, 20, 20);
+                    docPDF.setFontSize(6.5);
+                    docPDF.text("Escaneie para pagar", 149, y + 21);
                 }
 
-                y += 26;
+                y += 28; // Espaço seguro para afastar as assinaturas do bloco de pagamento
 
                 // Assinaturas
                 docPDF.setLineWidth(0.2);
@@ -721,7 +718,7 @@
 
             } catch (error) {
                 console.error("Erro ao gerar o relatório PDF:", error);
-                alert("Ocorreu an erro ao processar o relatório.");
+                alert("Ocorreu um erro ao processar o relatório.");
             }
         };
 
