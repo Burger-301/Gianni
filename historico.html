@@ -116,60 +116,30 @@ window.gerarEPartilharPDF = async function(osId) {
 
                 y += (splitDescription.length * 5) + 6;
 
-                // Fotografias / Anexos (Compactas, exibidas lado a lado se houver mais do que uma)
-                const imagensArray = order.imageUrls || (order.imageUrl ? [order.imageUrl] : []);
-                if (imagensArray.length > 0) {
-                    if (y > 200) {
-                        docPDF.addPage();
-                        y = 20;
-                    }
-
-                    docPDF.setFillColor(230, 235, 245);
-                    docPDF.rect(20, y, 170, 6, 'F');
-                    docPDF.setFont("helvetica", "bold");
-                    docPDF.setFontSize(9);
-                    docPDF.text("Fotografia(s) / Anexo(s) do Equipamento", 22, y + 4);
-                    
-                    y += 8;
-
-                    let imgX = 20;
-                    let imgY = y;
-                    let maxAlturaLinha = 0;
-
-                    for (let i = 0; i <imagensArray.length; i++) {
-                        const imgBase64 = await getBase64ImageFromUrl(imagensArray[i]);
-                        if (imgBase64) {
-                            // Se passar da largura útil da página (2 imagens por linha: 80mm cada + 10mm de espaço)
-                            if (imgX + 80 > 190) {
-                                imgX = 20;
-                                imgY += maxAlturaLinha + 5;
-                                maxAlturaLinha = 0;
-                            }
-
-                            // Verifica se cabe na página verticalmente
-                            if (imgY + 50 > 270) {
-                                docPDF.addPage();
-                                imgY = 20;
-                                imgX = 20;
-                            }
-
-                            docPDF.addImage(imgBase64, 'JPEG', imgX, imgY, 80, 50);
-                            
-                            if (50 > maxAlturaLinha) maxAlturaLinha = 50;
-
-                            imgX += 90; // Move para a posição da próxima imagem na horizontal
+                // Fotografia / Anexo (Reduzida e posicionada logo abaixo dos serviços quando possível)[cite: 5]
+                if (order.imageUrl) {
+                    const imgBase64 = await getBase64ImageFromUrl(order.imageUrl);
+                    if (imgBase64) {
+                        // Se o espaço vertical atual estiver perto do fim da página, cria nova página automaticamente
+                        if (y > 210) {
+                            docPDF.addPage();
+                            y = 20;
                         }
-                    }
 
-                    y = imgY + maxAlturaLinha + 10;
+                        docPDF.setFillColor(230, 235, 245);
+                        docPDF.rect(20, y, 170, 6, 'F');
+                        docPDF.setFont("helvetica", "bold");
+                        docPDF.setFontSize(9);
+                        docPDF.text("Fotografia / Anexo do Equipamento", 22, y + 4);
+                        
+                        y += 8;
+                        // Tamanho compacto (Largura: 85mm, Altura: 55mm) para não ocupar a folha inteira
+                        docPDF.addImage(imgBase64, 'JPEG', 20, y, 85, 55);
+                        y += 60; 
+                    }
                 }
 
                 // Valor Total e Condição de Pagamento
-                if (y > 220) {
-                    docPDF.addPage();
-                    y = 20;
-                }
-
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
