@@ -168,7 +168,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Logótipo, Anexos Múltiplos e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF Seguro com Imagens e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -293,21 +293,34 @@
             return payload + crcHex;
         }
 
-        async function getBase64ImageFromUrl(imageUrl) {
-            try {
-                const response = await fetch(imageUrl, { mode: 'cors' });
-                if (!response.ok) return null;
-                const blob = await response.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = () => resolve(null);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (e) {
-                console.warn("Aviso: Não foi possível carregar a imagem para o PDF:", imageUrl);
-                return null;
-            }
+        // Método robusto por Image Object para evitar bloqueios de CORS e falhas no PDF
+        function getBase64ImageFromUrl(url) {
+            return new Promise((resolve) => {
+                if (!url) {
+                    resolve(null);
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg'));
+                    } catch (e) {
+                        console.warn("Erro ao converter imagem para Base64:", e);
+                        resolve(null);
+                    }
+                };
+                img.onerror = function() {
+                    console.warn("Não foi possível carregar a imagem:", url);
+                    resolve(null);
+                };
+                img.src = url;
+            });
         }
 
         async function loadClientsFilter() {
@@ -642,7 +655,7 @@
 
                 y += (splitDescription.length * 5) + 8;
 
-                // Fotografias / Anexos (Grelha segura de imagens)
+                // Fotografias / Anexos
                 const listaImagens = order.imageUrls || (order.imageUrl ? [order.imageUrl] : []);
                 if (listaImagens.length > 0) {
                     if (y > 200) {
