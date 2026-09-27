@@ -4,8 +4,6 @@ import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/
 const clientSelect = document.getElementById('client-select');
 const form = document.getElementById('os-form');
 
-const VALOR_HORA_FIXO = 200.00; 
-
 function ajustarCanvas(canvas) {
     if (!canvas) return;
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -55,7 +53,7 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// Função para efetuar upload de múltiplos ficheiros para o ImgBB com a tua chave integrada
+// Função para efetuar upload de múltiplos ficheiros para o ImgBB
 async function uploadMultiplosParaImgBB(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -63,7 +61,7 @@ async function uploadMultiplosParaImgBB(fileInputId) {
     }
 
     const imageUrls = [];
-    const apiKey = "760f9d5337196e65847ca8351f92398f"; // A tua chave real do ImgBB
+    const apiKey = "760f9d5337196e65847ca8351f92398f";
 
     for (let i = 0; i < fileInput.files.length; i++) {
         const file = fileInput.files[i];
@@ -81,44 +79,13 @@ async function uploadMultiplosParaImgBB(fileInputId) {
                 imageUrls.push(data.data.url);
             } else {
                 console.error("Falha no ImgBB para a imagem:", file.name, data);
-                alert(`Erro ao enviar a imagem ${file.name} para o servidor.`);
             }
         } catch (error) {
             console.error("Erro de rede no upload da imagem:", file.name, error);
-            alert(`Erro de ligação ao enviar a imagem ${file.name}.`);
         }
     }
 
     return imageUrls;
-}
-
-function calcularMinutosTrabalhados(startM, endM, startT, endT) {
-    let minutosTotais = 0;
-
-    if (startM && endM) {
-        const diffM = new Date(endM) - new Date(startM);
-        if (diffM > 0) minutosTotais += diffM / (1000 * 60);
-    }
-
-    if (startT && endT) {
-        const diffT = new Date(endT) - new Date(startT);
-        if (diffT > 0) minutosTotais += diffT / (1000 * 60);
-    }
-
-    if (minutosTotais < 0) minutosTotais = 0;
-
-    const horasDecimais = minutosTotais / 60;
-    const valorTotal = horasDecimais * VALOR_HORA_FIXO;
-
-    const horasExatas = Math.floor(minutosTotais / 60);
-    const minutosRestantes = minutosTotais % 60;
-    const formatadoTexto = `${horasExatas}h ${minutosRestantes}m`;
-
-    return {
-        totalHours: horasDecimais.toFixed(2),
-        totalHoursText: formatadoTexto,
-        totalValue: valorTotal.toFixed(2)
-    };
 }
 
 form.addEventListener('submit', async (e) => {
@@ -129,17 +96,55 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
-    alert("A enviar fotografias e a guardar a Ordem de Serviço. Aguarde um instante...");
+    alert("A processar dados e a guardar a Ordem de Serviço. Aguarde um instante...");
 
     const imageUrls = await uploadMultiplosParaImgBB('os-image');
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
+    // 1. CÁLCULO DE HORAS TRABALHADAS
+    const temHora = document.getElementById('tem-hora').value === 'sim';
+    const valorHora = parseFloat(document.getElementById('valor-hora').value) || 0;
     const timeStartManha = document.getElementById('time-start-manha').value;
     const timeEndManha = document.getElementById('time-end-manha').value;
     const timeStartTarde = document.getElementById('time-start-tarde').value;
     const timeEndTarde = document.getElementById('time-end-tarde').value;
 
-    const calc = calcularMinutosTrabalhados(timeStartManha, timeEndManha, timeStartTarde, timeEndTarde);
+    let minutosTotais = 0;
+    if (temHora) {
+        if (timeStartManha && timeEndManha) {
+            const diffM = new Date(timeEndManha) - new Date(timeStartManha);
+            if (diffM > 0) minutosTotais += diffM / (1000 * 60);
+        }
+        if (timeStartTarde && timeEndTarde) {
+            const diffT = new Date(timeEndTarde) - new Date(timeStartTarde);
+            if (diffT > 0) minutosTotais += diffT / (1000 * 60);
+        }
+    }
+    if (minutosTotais < 0) minutosTotais = 0;
+    
+    const horasDecimais = minutosTotais / 60;
+    const valorHorasTotal = temHora ? (horasDecimais * valorHora) : 0;
+
+    const horasExatas = Math.floor(minutosTotais / 60);
+    const minutosRestantes = minutosTotais % 60;
+    const totalHoursText = `${horasExatas}h ${minutosRestantes}m`;
+
+    // 2. CÁLCULO DE KM (DESLOCAMENTO)
+    const temKm = document.getElementById('tem-km').value === 'sim';
+    const valorKm = parseFloat(document.getElementById('valor-km').value) || 0;
+    const kmIda = parseFloat(document.getElementById('km-ida').value) || 0;
+    const kmVolta = parseFloat(document.getElementById('km-volta').value) || 0;
+    const totalKm = kmIda + kmVolta;
+    const valorKmTotal = temKm ? (totalKm * valorKm) : 0;
+
+    // 3. CÁLCULO DE COMBUSTÍVEL
+    const temCombustivel = document.getElementById('tem-combustivel').value === 'sim';
+    const valorLitro = parseFloat(document.getElementById('valor-litro').value) || 0;
+    const combustivelLitros = parseFloat(document.getElementById('combustivel-litros').value) || 0;
+    const valorCombustivelTotal = temCombustivel ? (combustivelLitros * valorLitro) : 0;
+
+    // 4. VALOR TOTAL GERAL
+    const totalValue = valorHorasTotal + valorKmTotal + valorCombustivelTotal;
 
     const osData = {
         clientId: clientSelect.value,
@@ -151,15 +156,33 @@ form.addEventListener('submit', async (e) => {
         serialNumber: document.getElementById('serial-number').value,
         serviceNature: document.getElementById('service-nature').value,
         serviceArea: document.getElementById('service-area').value,
+        
+        // Dados de Hora
+        temHora: temHora ? 'sim' : 'nao',
+        valorHora: valorHora.toFixed(2),
         timeStartManha: timeStartManha || "",
         timeEndManha: timeEndManha || "",
         timeStartTarde: timeStartTarde || "",
         timeEndTarde: timeEndTarde || "",
-        timeEnd: timeEndTarde || "",
-        totalHours: calc.totalHours,
-        totalHoursText: calc.totalHoursText,
-        hourlyRateUsed: VALOR_HORA_FIXO.toFixed(2),
-        totalValue: calc.totalValue,
+        totalHours: horasDecimais.toFixed(2),
+        totalHoursText: totalHoursText,
+        valorHorasTotal: valorHorasTotal.toFixed(2),
+
+        // Dados de Deslocamento (Km)
+        temKm: temKm ? 'sim' : 'nao',
+        valorKm: valorKm.toFixed(2),
+        kmIda: kmIda,
+        kmVolta: kmVolta,
+        totalKm: totalKm,
+        valorKmTotal: valorKmTotal.toFixed(2),
+
+        // Dados de Combustível
+        temCombustivel: temCombustivel ? 'sim' : 'nao',
+        valorLitro: valorLitro.toFixed(2),
+        combustivelLitros: combustivelLitros,
+        valorCombustivelTotal: valorCombustivelTotal.toFixed(2),
+
+        totalValue: totalValue.toFixed(2),
         description: document.getElementById('description').value,
         paymentTerms: document.getElementById('payment-terms').value,
         imageUrls: imageUrls || [], 
