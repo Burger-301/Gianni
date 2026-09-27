@@ -31,51 +31,53 @@
             <div class="container" style="max-width: 800px;">
                 <h2>Histórico de Ordens de Serviço</h2>
                 
-                <!-- Secção de Filtros de Pesquisa Compacta -->
-                <div style="background: #f8f9fa; padding: 12px 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ddd;">
-                    <h3 style="font-size: 14px; margin: 0 0 8px 0; color: #2c3e50;">Filtros de Pesquisa</h3>
+                <!-- Secção de Filtros de Pesquisa -->
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; border: 1px solid #ddd;">
+                    <h3 style="font-size: 16px; margin-top: 0; color: #2c3e50;">Filtros de Pesquisa</h3>
                     
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                         <!-- Filtro por Cliente -->
-                        <div style="flex: 2; min-width: 140px;">
-                            <label style="font-size: 11px; font-weight: bold; color: #555;">Cliente:</label>
-                            <select id="filter-client" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="font-size: 13px; font-weight: bold;">Cliente:</label>
+                            <select id="filter-client" style="margin-top: 4px;">
                                 <option value="">Todos os clientes</option>
                             </select>
                         </div>
                         
                         <!-- Filtro por Tipo de Manutenção -->
-                        <div style="flex: 1; min-width: 110px;">
-                            <label style="font-size: 11px; font-weight: bold; color: #555;">Tipo:</label>
-                            <select id="filter-type" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
-                                <option value="">Todos</option>
+                        <div style="flex: 1; min-width: 160px;">
+                            <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
+                            <select id="filter-type" style="margin-top: 4px;">
+                                <option value="">Todos os tipos</option>
                                 <option value="Corretiva">Corretiva</option>
                                 <option value="Preventiva">Preventiva</option>
                                 <option value="Garantia">Garantia</option>
                             </select>
                         </div>
+                    </div>
 
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
                         <!-- Data Início -->
-                        <div style="flex: 1; min-width: 110px;">
-                            <label style="font-size: 11px; font-weight: bold; color: #555;">Data Início:</label>
-                            <input type="date" id="filter-start" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
+                        <div style="flex: 1; min-width: 140px;">
+                            <label style="font-size: 13px; font-weight: bold;">Data Início:</label>
+                            <input type="date" id="filter-start" style="margin-top: 4px;">
                         </div>
                         
                         <!-- Data Fim -->
-                        <div style="flex: 1; min-width: 110px;">
-                            <label style="font-size: 11px; font-weight: bold; color: #555;">Data Fim:</label>
-                            <input type="date" id="filter-end" style="margin-top: 2px; width: 100%; padding: 6px; font-size: 12px; box-sizing: border-box;">
+                        <div style="flex: 1; min-width: 140px;">
+                            <label style="font-size: 13px; font-weight: bold;">Data Fim:</label>
+                            <input type="date" id="filter-end" style="margin-top: 4px;">
                         </div>
 
                         <!-- Botão Aplicar -->
                         <div>
-                            <button type="button" id="apply-filters" style="padding: 7px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">Filtrar</button>
+                            <button type="button" id="apply-filters" style="padding: 11px 20px; background: #007bff; margin-top: 4px; color: white; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Lista de Ordens de Serviço -->
-                <div style="margin-top: 20px;">
+                <div style="margin-top: 25px;">
                     <div id="history-list">
                         <p style="color: #666; text-align: center;">A carregar histórico...</p>
                     </div>
@@ -162,7 +164,7 @@
         </div>
     </div>
 
-    <!-- Script Principal com Nomes Dinâmicos de Ficheiros PDF -->
+    <!-- Script de Gestão, Filtros, PDF com Logótipo, Anexo Compacto e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -357,11 +359,13 @@
                 const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
                 const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
                 const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente de conclusão</span>';
+                
+                const badgeAnexo = order.imageUrl ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📷 Com Anexo</span>` : '';
 
                 html += `
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 16px; color: #2c3e50;">${clientName}</strong>
+                            <strong style="font-size: 16px; color: #2c3e50;">${clientName} ${badgeAnexo}</strong>
                             <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #495057;">${order.serviceNature || 'Corretiva'}</span>
                         </div>
                         <p style="margin: 4px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
@@ -530,12 +534,6 @@
 
                 const dataEmissao = new Date().toLocaleDateString('pt-BR');
 
-                // Calcular data de vencimento com base nos dias de condição de pagamento
-                const diasPagamento = parseInt(order.paymentTerms) || 30;
-                const dataVencimentoObj = new Date();
-                dataVencimentoObj.setDate(dataVencimentoObj.getDate() + diasPagamento);
-                const dataVencimentoFmt = dataVencimentoObj.toLocaleDateString('pt-BR');
-
                 const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
                 if (logoBase64) {
                     docPDF.addImage(logoBase64, 'PNG', 20, 10, 32, 14);
@@ -615,7 +613,7 @@
 
                 y += 15;
 
-                // Serviços realizados (Com 'Tipo:' e 'Descrição:' em negrito)
+                // Serviços realizados
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -638,10 +636,37 @@
 
                 y += (splitDescription.length * 5) + 8;
 
+                // Fotografia / Anexo (Compacta e posicionada logo abaixo dos serviços)
+                if (order.imageUrl) {
+                    const imgBase64 = await getBase64ImageFromUrl(order.imageUrl);
+                    if (imgBase64) {
+                        if (y > 210) {
+                            docPDF.addPage();
+                            y = 20;
+                        }
+
+                        docPDF.setFillColor(230, 235, 245);
+                        docPDF.rect(20, y, 170, 6, 'F');
+                        docPDF.setFont("helvetica", "bold");
+                        docPDF.setFontSize(9);
+                        docPDF.text("Fotografia / Anexo do Equipamento", 22, y + 4);
+                        
+                        y += 8;
+                        docPDF.addImage(imgBase64, 'JPEG', 20, y, 80, 50);
+                        y += 58; 
+                    }
+                }
+
                 // Valor Total e Condição de Pagamento
+                if (y > 220) {
+                    docPDF.addPage();
+                    y = 20;
+                }
+
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(10);
                 docPDF.text("VALOR TOTAL", 22, y + 5);
 
                 y += 8;
@@ -653,11 +678,16 @@
                 y += 18;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(9);
-                docPDF.text(`• Condição de Pagamento: Para ${order.paymentTerms || '30'} dias (Vencimento em: ${dataVencimentoFmt})`, 22, y);
+                docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
 
                 y += 12;
 
                 // DADOS BANCÁRIOS & QR CODE PIX
+                if (y > 220) {
+                    docPDF.addPage();
+                    y = 20;
+                }
+
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -677,13 +707,18 @@
                 const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
                 if (pixBase64) {
                     docPDF.addImage(pixBase64, 'PNG', 145, y, 22, 22);
-                    docPDF.setFontSize(6.5);
-                    docPDF.text("Escaneie para pagar com PIX", 137, y + 25);
+                    docPDF.setFontSize(7);
+                    docPDF.text("Escaneie para pagar", 145, y + 25);
                 }
 
-                y += 42; 
+                y += 40; 
 
                 // Assinaturas
+                if (y > 240) {
+                    docPDF.addPage();
+                    y = 30;
+                }
+
                 docPDF.setLineWidth(0.2);
                 docPDF.line(20, y + 15, 90, y + 15);
                 docPDF.line(120, y + 15, 190, y + 15);
@@ -701,8 +736,7 @@
                 }
 
                 const pdfBlob = docPDF.output('blob');
-
-                // CRIAR NOME DO FICHEIRO DINÂMICO (Nome do Cliente + Data)
+                
                 const rawClientName = clientInfo.name || order.clientName || "Cliente";
                 const safeClientName = rawClientName.replace(/[^a-zA-Z0-9]/g, "_");
                 const refDateStr = order.timeStartManha || order.timeStart || new Date();
