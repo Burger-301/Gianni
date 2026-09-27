@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=1.1">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -168,9 +168,9 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF Seguro com Imagens e Firebase -->
+    <!-- Script com Cache Busting (v=1.1) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js';
+        import { db, auth } from './js/firebase-config.js?v=1.1';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -378,7 +378,6 @@
                 const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente</span>';
                 
                 const temFotos = (order.imageUrls && order.imageUrls.length > 0) || order.imageUrl;
-                // Ajustado com white-space: nowrap para evitar que a etiqueta quebre de linha no telemóvel
                 const badgeAnexo = temFotos ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; display: inline-block; margin-top: 2px;">📷 Com Anexo(s)</span>` : '';
 
                 html += `
@@ -403,7 +402,6 @@
 
                         <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
 
-                        <!-- Botões mobile totalmente otimizados e alinhados -->
                         <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
                             <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; width: 100%;">
                                 📄 Gerar Relatório
