@@ -162,7 +162,7 @@
         </div>
     </div>
 
-    <!-- Script de Gestão, Filtros, PDF com Validação/Vencimento e Firebase -->
+    <!-- Script de Gestão, Filtros, PDF com Negrito em Tipo/Descrição e Firebase -->
     <script type="module">
         import { db, auth } from './js/firebase-config.js';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -615,21 +615,30 @@
 
                 y += 15;
 
-                // Serviços realizados
+                // Serviços realizados (Com 'Tipo:' e 'Descrição:' em negrito)
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text("Serviços realizados", 22, y + 5);
 
                 y += 10;
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Tipo:", 22, y);
                 docPDF.setFont("helvetica", "normal");
-                const descText = `Tipo: ${order.serviceNature || ''} - ${order.serviceArea || ''}\nDescrição: ${order.description || 'Sem descrição'}`;
-                const splitDescription = docPDF.splitTextToSize(descText, 165);
+                docPDF.text(`${order.serviceNature || ''} - ${order.serviceArea || ''}`, 32, y);
+
+                y += 6;
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Descrição:", 22, y);
+
+                y += 5;
+                docPDF.setFont("helvetica", "normal");
+                const splitDescription = docPDF.splitTextToSize(order.description || 'Sem descrição', 165);
                 docPDF.text(splitDescription, 22, y);
 
                 y += (splitDescription.length * 5) + 8;
 
-                // Valor Total e Condição de Pagamento (Com data de vencimento calculada)
+                // Valor Total e Condição de Pagamento
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -648,7 +657,7 @@
 
                 y += 12;
 
-                // DADOS BANCÁRIOS & QR CODE PIX
+                // DADOS BANCÁRIOS & QR CODE PIX (Texto atualizado para "Escaneie para pagar com PIX")
                 docPDF.setFillColor(230, 235, 245);
                 docPDF.rect(20, y, 170, 7, 'F');
                 docPDF.setFont("helvetica", "bold");
@@ -668,8 +677,8 @@
                 const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
                 if (pixBase64) {
                     docPDF.addImage(pixBase64, 'PNG', 145, y, 22, 22);
-                    docPDF.setFontSize(7);
-                    docPDF.text("Escaneie para pagar", 145, y + 25);
+                    docPDF.setFontSize(6.5);
+                    docPDF.text("Escaneie para pagar com PIX", 137, y + 25);
                 }
 
                 y += 42; 
