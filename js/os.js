@@ -55,38 +55,39 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// Função para enviar imagem para o ImgBB
-async function uploadParaImgBB(fileInputId) {
+// Função para efetuar upload de múltiplos ficheiros para o ImgBB
+async function uploadMultiplosParaImgBB(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        return ""; 
+        return []; 
     }
 
-    const file = fileInput.files[0];
+    const imageUrls = [];
     const apiKey = "COLOCA_AQUI_A_TUA_CHAVE_IMGBB"; // Insere aqui a tua chave da API do ImgBB
-    
-    const formData = new FormData();
-    formData.append("image", file);
 
-    try {
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-            method: "POST",
-            body: formData
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            return data.data.url; 
-        } else {
-            console.error("Falha no ImgBB:", data);
-            alert("Aviso: Não foi possível enviar a fotografia. A O.S. será guardada sem anexo.");
-            return "";
+    for (let i = 0; i < fileInput.files.length; i++) {
+        const file = fileInput.files[i];
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                method: "POST",
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                imageUrls.push(data.data.url);
+            } else {
+                console.error("Falha no ImgBB para a imagem:", file.name, data);
+            }
+        } catch (error) {
+            console.error("Erro de rede no upload da imagem:", file.name, error);
         }
-    } catch (error) {
-        console.error("Erro de rede no upload da imagem:", error);
-        alert("Aviso: Sem ligação para enviar a fotografia. A O.S. será guardada sem anexo.");
-        return "";
     }
+
+    return imageUrls;
 }
 
 function calcularMinutosTrabalhados(startM, endM, startT, endT) {
@@ -126,7 +127,9 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
-    const imageUrl = await uploadParaImgBB('os-image');
+    alert("A enviar fotografias e a guardar a Ordem de Serviço. Aguarde um instante...");
+
+    const imageUrls = await uploadMultiplosParaImgBB('os-image');
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
     const timeStartManha = document.getElementById('time-start-manha').value;
@@ -157,7 +160,7 @@ form.addEventListener('submit', async (e) => {
         totalValue: calc.totalValue,
         description: document.getElementById('description').value,
         paymentTerms: document.getElementById('payment-terms').value,
-        imageUrl: imageUrl || "", 
+        imageUrls: imageUrls || [], 
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),
         customerSignature: clientPad.toDataURL(),
@@ -171,7 +174,7 @@ form.addEventListener('submit', async (e) => {
         techPad.clear();
         clientPad.clear();
         
-        window.location.href = "index.html"; // Redireciona para o histórico/início
+        window.location.href = "index.html"; 
     } catch (error) {
         console.error("Erro ao guardar O.S.: ", error);
         alert("Ocorreu um erro ao gravar a O.S. Verifica a consola.");
