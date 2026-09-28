@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/style.css?v=2.1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -156,7 +156,7 @@
     </div>
 
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=2.2';
+        import { db, auth } from './js/firebase-config.js?v=2.1';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -591,20 +591,20 @@
                 docPDF.setLineWidth(0.3);
                 docPDF.line(20, 18, 190, 18);
 
-                let y = 20; // Posição inicial logo abaixo da linha separadora do topo
+                let y = 21;
 
                 function desenharCabecalho(titulo) {
-                    y += 3; // Espaço em branco antes da faixa azul (triplicado em relação ao original de 1)
+                    y += 12; // Espaço triplicado (3x) antes da faixa azul para afastar do conteúdo anterior
                     docPDF.setFillColor(230, 235, 245);
                     docPDF.rect(20, y, 170, 5, 'F');
                     docPDF.setFont("helvetica", "bold");
                     docPDF.setFontSize(8.5);
                     docPDF.setTextColor(40, 40, 40);
                     docPDF.text(titulo, 22, y + 3.5);
-                    y += 6.5; // Espaço limpo abaixo da faixa azul onde o texto começa perfeitamente separado
+                    y += 6.5; // Espaço limpo abaixo da faixa azul antes do texto
                 }
 
-                // 1. Empresa Responsável (bem próxima à linha do topo)
+                // 1. Empresa Responsável
                 desenharCabecalho("Empresa responsável");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -684,7 +684,7 @@
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
 
-                // 7. DADOS BANCÁRIOS & QR CODE PIX (QR Code ajustado conforme solicitado)
+                // 7. DADOS BANCÁRIOS & QR CODE PIX (QR Code descido em +8 unidades)
                 desenharCabecalho("Dados Bancários / Pagamento PIX");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -697,14 +697,14 @@
                 
                 const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
                 if (pixBase64) {
-                    docPDF.addImage(pixBase64, 'PNG', 156, (y - 9) + 8, 15, 15); // QR code ajustado (+8)
+                    docPDF.addImage(pixBase64, 'PNG', 156, (y - 9) + 8, 15, 15); // QR Code descido em 8 unidades
                     docPDF.setFontSize(6);
                     docPDF.text("Escaneie para pagar", 154, (y + 8) + 8);
                 }
 
                 y += 8; 
 
-                // Assinaturas (Bloco ajustado com o offset de +20 unidades)
+                // Assinaturas (Bloco descido em +20 unidades)
                 let sigY = y + 20; 
                 docPDF.setLineWidth(0.2);
                 docPDF.line(20, sigY + 10, 90, sigY + 10);
