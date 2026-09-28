@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Ordem de Serviço - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.5">
+    <link rel="stylesheet" href="css/style.css?v=1.6">
     <!-- Signature Pad CDN -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 </head>
@@ -20,6 +20,11 @@
                 <a href="clientes.html">👥 Gestão de Clientes</a>
                 <a href="nova-os.html" class="active">📋 Nova Ordem de Serviço</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+                
+                <!-- Assinatura solicitada abaixo do Terminar Sessão -->
+                <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
+                    Powered by CS Code Solutions
+                </div>
             </nav>
         </aside>
 
@@ -260,7 +265,7 @@
     </script>
 
     <script type="module">
-        import { auth } from './js/firebase-config.js?v=1.5';
+        import { auth } from './js/firebase-config.js?v=1.6';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
@@ -284,7 +289,7 @@
             });
         }
 
-        const btn.btnLogout = document.getElementById('btn-logout');
+        const btnLogout = document.getElementById('btn-logout');
         if (btnLogout) {
             btnLogout.addEventListener('click', async (e) => {
                 e.preventDefault();
@@ -294,7 +299,7 @@
         }
     </script>
 
-    <!-- Script principal da O.S. com Cache Busting (v=1.5) -->
-    <script type="module" src="js/os.js?v=1.5"></script>
+    <!-- Script principal da O.S. com Cache Busting (v=1.6) -->
+    <script type="module" src="js/os.js?v=1.6"></script>
 </body>
 </html>
