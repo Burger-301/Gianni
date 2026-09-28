@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Clientes - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <link rel="stylesheet" href="css/style.css?v=1.2">
 </head>
 <body>
     <div class="app-container">
@@ -18,6 +18,11 @@
                 <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
                 <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+                
+                <!-- Assinatura solicitada abaixo do Terminar Sessão -->
+                <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
+                    Powered by CS Code Solutions
+                </div>
             </nav>
         </aside>
 
@@ -72,9 +77,9 @@
         </main>
     </div>
 
-    <!-- Script com Cache Busting (v=1.1) -->
+    <!-- Script com Cache Busting (v=1.2) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.1';
+        import { db, auth } from './js/firebase-config.js?v=1.2';
         import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -99,11 +104,14 @@
             });
         }
 
-        document.getElementById('btn-logout').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await signOut(auth);
-            window.location.href = 'login.html';
-        });
+        const btnLogout = document.getElementById('btn-logout');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await signOut(auth);
+                window.location.href = 'login.html';
+            });
+        }
 
         const clientForm = document.getElementById('client-form');
         const clientsListDiv = document.getElementById('clients-list');
