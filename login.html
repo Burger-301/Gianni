@@ -56,11 +56,16 @@
             <button type="submit">Entrar</button>
             <div id="error-msg"></div>
         </form>
+
+        <!-- Assinatura solicitada -->
+        <div style="margin-top: 25px; font-size: 11px; color: #adb5bd; font-weight: 500;">
+            Powered by CS Code Solutions
+        </div>
     </div>
 
-    <!-- Script com Cache Busting (v=1.1) -->
+    <!-- Script com Cache Busting (v=1.2) -->
     <script type="module">
-        import { auth } from './js/firebase-config.js?v=1.1';
+        import { auth } from './js/firebase-config.js?v=1.2';
         import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const loginForm = document.getElementById('login-form');
