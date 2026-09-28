@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Assistência Técnica</title>
+    <title>Login - RG Soluções Técnicas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -40,24 +40,24 @@
 </head>
 <body>
     <div class="login-card">
-        <!-- Logótipo adicionado -->
+        <!-- Logótipo -->
         <img src="img/logo.png" alt="RG Soluções Técnicas">
         
         <h2>Iniciar Sessão</h2>
         <form id="login-form">
             <div class="form-group">
                 <label>E-mail:</label>
-                <input type="email" id="email" value="gcrodeghiero@gmail.com" required placeholder="exemplo@email.com">
+                <input type="email" id="email" required placeholder="exemplo@email.com">
             </div>
             <div class="form-group">
                 <label>Palavra-passe:</label>
-                <input type="password" id="password" value="@46290801" required placeholder="********">
+                <input type="password" id="password" required placeholder="********">
             </div>
-            <button type="submit">Entrar</button>
+            <button type="submit" id="btn-login">Entrar</button>
             <div id="error-msg"></div>
         </form>
 
-        <!-- Assinatura solicitada -->
+        <!-- Assinatura -->
         <div style="margin-top: 25px; font-size: 11px; color: #adb5bd; font-weight: 500;">
             Powered by CS Code Solutions
         </div>
@@ -70,18 +70,32 @@
 
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
+        const btnLogin = document.getElementById('btn-login');
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+
+            errorMsg.textContent = "";
+            btnLogin.disabled = true;
+            btnLogin.textContent = "A entrar...";
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = 'historico.html';
+                // Redireciona corretamente para o painel principal (Início / Histórico)
+                window.location.href = 'index.html';
             } catch (error) {
                 console.error("Erro no login:", error);
-                errorMsg.textContent = "Erro ao entrar. Verifique o e-mail e a senha.";
+                let msg = "Erro ao entrar. Verifique o e-mail e a palavra-passe.";
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    msg = "E-mail ou palavra-passe incorretos.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    msg = "Muitas tentativas falhadas. Tente novamente mais tarde.";
+                }
+                errorMsg.textContent = msg;
+                btnLogin.disabled = false;
+                btnLogin.textContent = "Entrar";
             }
         });
     </script>
