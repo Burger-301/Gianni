@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=2.0">
-    <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
+    <link rel="stylesheet" href="css/style.css?v=2.1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- Menu Lateral (Sidebar) com o Logótipo -->
         <aside class="sidebar">
             <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
                 <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
@@ -23,15 +21,12 @@
             </nav>
         </aside>
 
-        <!-- Conteúdo Principal -->
         <main class="main-content">
-            <!-- Botão de menu para telemóveis -->
             <button class="menu-toggle" id="menuToggle">☰ Menu</button>
 
             <div class="container" style="max-width: 800px;">
                 <h2>Histórico de Ordens de Serviço</h2>
                 
-                <!-- Secção de Filtros Compacta e Retrátil -->
                 <details style="background: #f8f9fa; padding: 10px 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ddd;">
                     <summary style="font-weight: bold; cursor: pointer; color: #2c3e50; font-size: 14px; outline: none;">
                         🔍 Filtros de Pesquisa (Clique para abrir/recolher)
@@ -39,7 +34,6 @@
                     
                     <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <!-- Filtro por Cliente -->
                             <div style="flex: 1; min-width: 180px;">
                                 <label style="font-size: 12px; font-weight: bold;">Cliente:</label>
                                 <select id="filter-client" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
@@ -47,7 +41,6 @@
                                 </select>
                             </div>
                             
-                            <!-- Filtro por Tipo de Manutenção -->
                             <div style="flex: 1; min-width: 140px;">
                                 <label style="font-size: 12px; font-weight: bold;">Tipo:</label>
                                 <select id="filter-type" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
@@ -60,19 +53,16 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                            <!-- Data Início -->
                             <div style="flex: 1; min-width: 130px;">
                                 <label style="font-size: 12px; font-weight: bold;">Início:</label>
                                 <input type="date" id="filter-start" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
                             </div>
                             
-                            <!-- Data Fim -->
                             <div style="flex: 1; min-width: 130px;">
                                 <label style="font-size: 12px; font-weight: bold;">Fim:</label>
                                 <input type="date" id="filter-end" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
                             </div>
 
-                            <!-- Botão Aplicar -->
                             <div>
                                 <button type="button" id="apply-filters" style="padding: 7px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">Filtrar</button>
                             </div>
@@ -80,7 +70,6 @@
                     </div>
                 </details>
 
-                <!-- Lista de Ordens de Serviço -->
                 <div style="margin-top: 20px;">
                     <div id="history-list">
                         <p style="color: #666; text-align: center;">A carregar histórico...</p>
@@ -90,7 +79,6 @@
         </main>
     </div>
 
-    <!-- Modal Personalizado para Atualizar Turnos -->
     <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
         <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Atualizar Turnos e Encerramento</h3>
@@ -119,7 +107,6 @@
         </div>
     </div>
 
-    <!-- Modal para Editar Ordem de Serviço -->
     <div id="modal-editar-os" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
         <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Editar Ordem de Serviço</h3>
@@ -168,9 +155,8 @@
         </div>
     </div>
 
-    <!-- Script com Cache Busting (v=2.0) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=2.0';
+        import { db, auth } from './js/firebase-config.js?v=2.1';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -605,17 +591,17 @@
                 docPDF.setLineWidth(0.3);
                 docPDF.line(20, 18, 190, 18);
 
-                let y = 21; // Posição inicial segura
+                let y = 21;
 
                 function desenharCabecalho(titulo) {
-                    y += 4; // Respiro exato (equivalente a uma linha em branco) antes da faixa azul
+                    y += 12; // Espaço triplicado (3x) antes da faixa azul para afastar do conteúdo anterior
                     docPDF.setFillColor(230, 235, 245);
                     docPDF.rect(20, y, 170, 5, 'F');
                     docPDF.setFont("helvetica", "bold");
                     docPDF.setFontSize(8.5);
                     docPDF.setTextColor(40, 40, 40);
                     docPDF.text(titulo, 22, y + 3.5);
-                    y += 7.5; // Garante espaço limpo abaixo da faixa azul antes do texto começar
+                    y += 6.5; // Espaço limpo abaixo da faixa azul antes do texto
                 }
 
                 // 1. Empresa Responsável
@@ -624,7 +610,7 @@
                 docPDF.setFontSize(8);
                 docPDF.text(`Nome: ${empresa.nome}`, 22, y);
                 docPDF.text(`Razão social: ${empresa.razaoSocial}`, 102, y);
-                y += 5;
+                y += 4.5;
                 docPDF.text(`E-mail de contato: ${empresa.email}`, 22, y);
                 docPDF.text(`CNPJ: ${empresa.cnpj}`, 102, y);
 
@@ -634,10 +620,10 @@
                 docPDF.setFontSize(8);
                 docPDF.text(`Nome: ${clientInfo.name || order.clientName || 'N/A'}`, 22, y);
                 docPDF.text(`Razão social: ${clientInfo.razaoSocial || '-'}`, 102, y);
-                y += 5;
+                y += 4.5;
                 docPDF.text(`E-mail: ${clientInfo.email || '-'}`, 22, y);
                 docPDF.text(`CPF / CNPJ: ${clientInfo.document || '-'}`, 102, y);
-                y += 5;
+                y += 4.5;
                 docPDF.text(`Endereço: ${clientInfo.address || '-'}`, 22, y);
 
                 // 3. Equipamento
@@ -646,7 +632,7 @@
                 docPDF.setFontSize(8);
                 docPDF.text(`Equipamento: ${order.equipment || 'N/A'}`, 22, y);
                 docPDF.text(`Marca: ${order.brand || '-'} | Modelo: ${order.model || '-'}`, 102, y);
-                y += 5;
+                y += 4.5;
                 docPDF.text(`Matrícula / N° de Série: ${order.serialNumber || '-'}`, 22, y);
 
                 // 4. Serviços realizados
@@ -656,21 +642,21 @@
                 docPDF.text("Tipo:", 22, y);
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`${order.serviceNature || ''} - ${order.serviceArea || ''}`, 30, y);
-                y += 5;
+                y += 4.5;
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text("Descrição:", 22, y);
-                y += 4;
+                y += 3.5;
                 docPDF.setFont("helvetica", "normal");
                 const splitDescription = docPDF.splitTextToSize(order.description || 'Sem descrição', 165);
                 docPDF.text(splitDescription, 22, y);
-                y += (splitDescription.length * 3.5) + 1;
+                y += (splitDescription.length * 3.5);
 
                 // 5. Horários e Turnos
                 desenharCabecalho("Horários e Turnos");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
                 docPDF.text(`• Manhã: ${formatarDataHora(order.timeStartManha || order.timeStart)} até ${formatarDataHora(order.timeEndManha)}`, 22, y);
-                y += 5;
+                y += 4.5;
                 docPDF.text(`• Tarde: ${formatarDataHora(order.timeStartTarde)} até ${order.timeEndTarde ? formatarDataHora(order.timeEndTarde) : 'Pendente'}`, 22, y);
 
                 // 6. VALOR TOTAL
@@ -680,30 +666,30 @@
 
                 if (order.temHora === 'sim') {
                     docPDF.text(`• Total Horas Trabalhadas: ${order.totalHoursText || '0h'} (R$ ${order.valorHorasTotal || '0.00'})`, 22, y);
-                    y += 5;
+                    y += 4.5;
                 }
                 if (order.temKm === 'sim') {
                     docPDF.text(`• Deslocamento: ${order.totalKm || 0} Km (Ida: ${order.kmIda || 0} + Volta: ${order.kmVolta || 0}) - R$ ${order.valorKmTotal || '0.00'}`, 22, y);
-                    y += 5;
+                    y += 4.5;
                 }
                 if (order.temCombustivel === 'sim') {
                     docPDF.text(`• Combustível: ${order.combustivelLitros || 0} Litros - R$ ${order.valorCombustivelTotal || '0.00'}`, 22, y);
-                    y += 5;
+                    y += 4.5;
                 }
 
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL GERAL: R$ ${order.totalValue || '0.00'}`, 22, y);
 
-                y += 5;
+                y += 4.5;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
 
-                // 7. DADOS BANCÁRIOS & QR CODE PIX
+                // 7. DADOS BANCÁRIOS & QR CODE PIX (QR Code descido em +8 unidades)
                 desenharCabecalho("Dados Bancários / Pagamento PIX");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
                 docPDF.text(`• Banco: ${empresa.banco} | Agência: ${empresa.agencia} | Conta: ${empresa.conta}`, 22, y);
-                y += 5;
+                y += 4.5;
                 docPDF.text(`• Chave PIX (CNPJ): ${empresa.cnpj} | Favorecido: ${empresa.razaoSocial}`, 22, y);
 
                 const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${numOSFormatted}`);
@@ -711,28 +697,29 @@
                 
                 const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
                 if (pixBase64) {
-                    docPDF.addImage(pixBase64, 'PNG', 156, y - 9, 15, 15);
+                    docPDF.addImage(pixBase64, 'PNG', 156, (y - 9) + 8, 15, 15); // QR Code descido em 8 unidades
                     docPDF.setFontSize(6);
-                    docPDF.text("Escaneie para pagar", 154, y + 8);
+                    docPDF.text("Escaneie para pagar", 154, (y + 8) + 8);
                 }
 
                 y += 8; 
 
-                // Assinaturas
+                // Assinaturas (Bloco descido em +20 unidades)
+                let sigY = y + 20; 
                 docPDF.setLineWidth(0.2);
-                docPDF.line(20, y + 10, 90, y + 10);
-                docPDF.line(120, y + 10, 190, y + 10);
+                docPDF.line(20, sigY + 10, 90, sigY + 10);
+                docPDF.line(120, sigY + 10, 190, sigY + 10);
 
                 docPDF.setFontSize(7);
-                docPDF.text("ASSINATURA DO CLIENTE", 38, y + 13.5);
-                docPDF.text("ASSINATURA TÉCNICO RESPONSÁVEL", 128, y + 13.5);
+                docPDF.text("ASSINATURA DO CLIENTE", 38, sigY + 13.5);
+                docPDF.text("ASSINATURA TÉCNICO RESPONSÁVEL", 128, sigY + 13.5);
 
                 if (order.technicianSignature) {
-                    docPDF.addImage(order.technicianSignature, 'PNG', 125, y - 4, 45, 12);
+                    docPDF.addImage(order.technicianSignature, 'PNG', 125, sigY - 4, 45, 12);
                 }
 
                 if (order.customerSignature) {
-                    docPDF.addImage(order.customerSignature, 'PNG', 25, y - 4, 45, 12);
+                    docPDF.addImage(order.customerSignature, 'PNG', 25, sigY - 4, 45, 12);
                 }
 
                 // ANEXOS (Apenas se existirem, geram a 2ª página)
