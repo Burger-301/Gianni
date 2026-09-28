@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.6">
+    <link rel="stylesheet" href="css/style.css?v=1.7">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -168,9 +168,9 @@
         </div>
     </div>
 
-    <!-- Script com Cache Busting (v=1.6) -->
+    <!-- Script com Cache Busting (v=1.7) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.6';
+        import { db, auth } from './js/firebase-config.js?v=1.7';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -357,6 +357,16 @@
             }
         }
 
+        function calcularNumeroOS(order) {
+            if (order.osNumber) {
+                return String(order.osNumber).padStart(5, '0');
+            }
+            const ordersAsc = [...allOrders].reverse();
+            const index = ordersAsc.findIndex(o => o.id === order.id);
+            const num = (index !== -1) ? (13 + index) : 13;
+            return String(num).padStart(5, '0');
+        }
+
         function renderHistory(orders) {
             const historyListDiv = document.getElementById('history-list');
             historyListDiv.innerHTML = "";
@@ -370,6 +380,7 @@
             orders.forEach(order => {
                 const clientInfo = clientsMap[order.clientId] || {};
                 const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
+                const numOSFormatted = calcularNumeroOS(order);
                 
                 const inicioManhaFmt = formatarDataHora(order.timeStartManha || order.timeStart);
                 const fimManhaFmt = formatarDataHora(order.timeEndManha);
@@ -384,7 +395,8 @@
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px;">
                             <div style="flex: 1;">
-                                <strong style="font-size: 16px; color: #2c3e50; display: block; word-break: break-word;">${clientName}</strong>
+                                <span style="background: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">O.S. N° ${numOSFormatted}</span>
+                                <strong style="font-size: 16px; color: #2c3e50; word-break: break-word;">${clientName}</strong>
                                 ${badgeAnexo}
                             </div>
                             <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; white-space: nowrap;">${order.serviceNature || 'Corretiva'}</span>
@@ -567,6 +579,7 @@
                 };
 
                 const dataEmissao = new Date().toLocaleDateString('pt-BR');
+                const numOSFormatted = calcularNumeroOS(order);
 
                 const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
                 if (logoBase64) {
@@ -575,18 +588,22 @@
 
                 docPDF.setFont("helvetica", "bold");
                 docPDF.setFontSize(13);
-                docPDF.text("Orçamento / Manutenção Técnica", 58, 15);
+                docPDF.text("Orçamento / Manutenção Técnica", 58, 14);
                 
+                docPDF.setFontSize(10);
+                docPDF.setTextColor(0, 123, 255);
+                docPDF.text(`O.S. N°: ${numOSFormatted}`, 150, 14);
+
+                docPDF.setTextColor(0, 0, 0);
                 docPDF.setFontSize(9);
                 docPDF.setFont("helvetica", "normal");
-                docPDF.text(`Em: ${dataEmissao}`, 155, 15);
+                docPDF.text(`Em: ${dataEmissao}`, 150, 20);
 
                 docPDF.setLineWidth(0.4);
                 docPDF.line(20, 27, 190, 27);
 
                 let y = 33;
 
-                // Função auxiliar para desenhar cabeçalhos de secção perfeitamente espaçados
                 function desenharCabecalho(titulo) {
                     if (y > 270) {
                         docPDF.addPage();
@@ -598,7 +615,7 @@
                     docPDF.setFontSize(10);
                     docPDF.setTextColor(40, 40, 40);
                     docPDF.text(titulo, 22, y + 5);
-                    y += 11; // Avança perfeitamente para o conteúdo abaixo da faixa
+                    y += 11;
                 }
 
                 // 1. Empresa Responsável
@@ -732,7 +749,7 @@
                 y += 6;
                 docPDF.text(`• Favorecido: ${empresa.razaoSocial}`, 22, y);
 
-                const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${osId.substring(0, 6)}`);
+                const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${numOSFormatted}`);
                 const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixPayload)}`;
                 
                 const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
@@ -776,13 +793,13 @@
                 const mesPdf = String(dPdf.getMonth() + 1).padStart(2, '0');
                 const diaPdf = String(dPdf.getDate()).padStart(2, '0');
                 
-                const fileName = `Relatorio_${safeClientName}_${anoPdf}-${mesPdf}-${diaPdf}.pdf`;
+                const fileName = `Relatorio_OS_${numOSFormatted}_${safeClientName}_${anoPdf}-${mesPdf}-${diaPdf}.pdf`;
                 const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
                 if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                     try {
                         await navigator.share({
-                            title: 'Relatório Técnico - RG Soluções',
+                            title: `Relatório Técnico OS ${numOSFormatted} - RG Soluções`,
                             text: `Segue o relatório técnico referente ao equipamento ${order.equipment}.`,
                             files: [pdfFile],
                         });
@@ -799,7 +816,7 @@
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
-                alert("Relatório PDF gerado com sucesso!");
+                alert(`Relatório PDF da O.S. N° ${numOSFormatted} gerado com sucesso!`);
 
             } catch (error) {
                 console.error("Erro ao gerar o relatório PDF:", error);
