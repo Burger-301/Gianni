@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Ordem de Serviço - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.4">
+    <link rel="stylesheet" href="css/style.css?v=1.5">
     <!-- Signature Pad CDN -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 </head>
@@ -185,10 +185,19 @@
                         <textarea id="description" rows="4" style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
                     </div>
 
-                    <!-- Anexo / Fotografias -->
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Fotografias / Anexos do Equipamento:</label>
-                        <input type="file" id="os-image" accept="image/*" multiple style="width: 100%; padding: 8px; box-sizing: border-box; background: #fff; border: 1px solid #ccc; border-radius: 4px;">
+                    <!-- ANEXOS DINÂMICOS COM NOME/RÓTULO -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #2c3e50;">Fotografias / Anexos do Equipamento (com Nome/Rótulo):</label>
+                        
+                        <div id="container-anexos" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                            <!-- Linha de Anexo Inicial -->
+                            <div class="anexo-row" style="display: flex; gap: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                                <input type="text" placeholder="Nome do anexo (Ex: Antes da Intervenção)" class="anexo-titulo" style="flex: 1; padding: 6px; box-sizing: border-box;">
+                                <input type="file" accept="image/*" class="anexo-ficheiro" style="flex: 1; padding: 4px;">
+                            </div>
+                        </div>
+
+                        <button type="button" id="btn-adicionar-anexo" style="padding: 6px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">+ Adicionar outro anexo</button>
                     </div>
 
                     <!-- Condição de Pagamento -->
@@ -218,7 +227,7 @@
         </main>
     </div>
 
-    <!-- Script para controlo visual dos blocos dinâmicos -->
+    <!-- Script para controlo visual dos blocos dinâmicos e anexos múltiplos -->
     <script>
         document.getElementById('tem-hora').addEventListener('change', function() {
             const bloco = document.getElementById('bloco-turnos');
@@ -234,10 +243,24 @@
             const bloco = document.getElementById('bloco-combustivel');
             bloco.style.display = this.value === 'sim' ? 'block' : 'none';
         });
+
+        // Adicionar linhas de anexos dinamicamente
+        document.getElementById('btn-adicionar-anexo').addEventListener('click', function() {
+            const container = document.getElementById('container-anexos');
+            const novaLinha = document.createElement('div');
+            novaLinha.className = 'anexo-row';
+            novaLinha.style.cssText = 'display: flex; gap: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ccc;';
+            novaLinha.innerHTML = `
+                <input type="text" placeholder="Nome do anexo (Ex: Depois da Limpeza)" class="anexo-titulo" style="flex: 1; padding: 6px; box-sizing: border-box;">
+                <input type="file" accept="image/*" class="anexo-ficheiro" style="flex: 1; padding: 4px;">
+                <button type="button" onclick="this.parentElement.remove()" style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">X</button>
+            `;
+            container.appendChild(novaLinha);
+        });
     </script>
 
     <script type="module">
-        import { auth } from './js/firebase-config.js?v=1.4';
+        import { auth } from './js/firebase-config.js?v=1.5';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
@@ -261,7 +284,7 @@
             });
         }
 
-        const btnLogout = document.getElementById('btn-logout');
+        const btn.btnLogout = document.getElementById('btn-logout');
         if (btnLogout) {
             btnLogout.addEventListener('click', async (e) => {
                 e.preventDefault();
@@ -271,7 +294,7 @@
         }
     </script>
 
-    <!-- Script principal da O.S. com Cache Busting (v=1.4) -->
-    <script type="module" src="js/os.js?v=1.4"></script>
+    <!-- Script principal da O.S. com Cache Busting (v=1.5) -->
+    <script type="module" src="js/os.js?v=1.5"></script>
 </body>
 </html>
