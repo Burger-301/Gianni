@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/style.css?v=2.4">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -94,6 +94,7 @@
     <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
         <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Atualizar Turnos e Encerramento</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Preencha apenas o(s) turno(s) em que trabalhou (Manhã e/ou Tarde).</p>
             
             <div style="margin-bottom: 10px;">
                 <label style="font-size: 12px; font-weight: bold;">Início Manhã:</label>
@@ -108,7 +109,7 @@
                 <input type="datetime-local" id="modal-start-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
             </div>
             <div style="margin-bottom: 15px;">
-                <label style="font-size: 12px; font-weight: bold;">Final Tarde (Encerramento da O.S.):</label>
+                <label style="font-size: 12px; font-weight: bold;">Final Tarde:</label>
                 <input type="datetime-local" id="modal-end-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
             </div>
             
@@ -168,9 +169,9 @@
         </div>
     </div>
 
-    <!-- Script com Cache Busting (v=2.3) -->
+    <!-- Script com Cache Busting (v=2.4) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=2.3';
+        import { db, auth } from './js/firebase-config.js?v=2.4';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -237,7 +238,7 @@
             const valorHorasTotal = horasDecimais * Number(valorHoraFixo);
 
             const horasExatas = Math.floor(minutosTotais / 60);
-            const minutosRestantes = minutosTotais % 60;
+            const minutosRestantes = Math.round(minutosTotais % 60);
             const formatadoTexto = `${horasExatas}h ${minutosRestantes}m`;
 
             return {
@@ -385,11 +386,24 @@
                 const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
                 const numOSFormatted = calcularNumeroOS(order);
                 
-                const inicioManhaFmt = formatarDataHora(order.timeStartManha || order.timeStart);
-                const fimManhaFmt = formatarDataHora(order.timeEndManha);
-                const inicioTardeFmt = formatarDataHora(order.timeStartTarde);
-                const temEncerramento = order.timeEndTarde && order.timeEndTarde !== "";
-                const fimTardeFmt = temEncerramento ? formatarDataHora(order.timeEndTarde) : '<span style="color: #d9534f; font-weight: bold;">Pendente</span>';
+                const inicioManhaFmt = order.timeStartManha || order.timeStart ? formatarDataHora(order.timeStartManha || order.timeStart) : null;
+                const fimManhaFmt = order.timeEndManha ? formatarDataHora(order.timeEndManha) : null;
+                const inicioTardeFmt = order.timeStartTarde ? formatarDataHora(order.timeStartTarde) : null;
+                const fimTardeFmt = order.timeEndTarde ? formatarDataHora(order.timeEndTarde) : null;
+                
+                let turnosTextoHtml = '';
+                if (inicioManhaFmt && fimManhaFmt) {
+                    turnosTextoHtml += `<p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Manhã:</strong> ${inicioManhaFmt} até ${fimManhaFmt}</p>`;
+                }
+                if (inicioTardeFmt && fimTardeFmt) {
+                    turnosTextoHtml += `<p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Tarde:</strong> ${inicioTardeFmt} até ${fimTardeFmt}</p>`;
+                }
+                if (!turnosTextoHtml) {
+                    turnosTextoHtml = `<p style="margin: 4px 0; font-size: 13px; color: #d9534f; font-weight: bold;"><strong>Turnos:</strong> Pendente / Não preenchidos</p>`;
+                }
+
+                const temEncerramento = Boolean(order.timeEnd || order.timeEndTarde || order.timeEndManha);
+                const btnEncerramentoTexto = temEncerramento ? 'Editar Turnos/Encerramento' : 'Preencher Encerramento';
                 
                 const temFotos = (order.attachments && order.attachments.length > 0) || (order.imageUrls && order.imageUrls.length > 0) || order.imageUrl;
                 const badgeAnexo = temFotos ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; display: inline-block; margin-top: 2px;">📷 Com Anexo(s)</span>` : '';
@@ -406,8 +420,7 @@
                         </div>
                         
                         <p style="margin: 6px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
-                        <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Manhã:</strong> ${inicioManhaFmt} até ${fimManhaFmt}</p>
-                        <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Tarde:</strong> ${inicioTardeFmt} até ${fimTardeFmt}</p>
+                        ${turnosTextoHtml}
                         <p style="margin: 4px 0; font-size: 13px; color: #444;">
                             <strong>Total Horas:</strong> ${order.totalHoursText || order.totalHours || '0'}h | <strong>Pagamento:</strong> Para ${order.paymentTerms || '-'} dias
                         </p>
@@ -422,7 +435,7 @@
                                 📄 Gerar Relatório
                             </button>
                             <button onclick="abrirModalHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; width: 100%;">
-                                ⏱️ ${temEncerramento ? 'Editar Turnos/Encerramento' : 'Preencher Encerramento'}
+                                ⏱️ ${btnEncerramentoTexto}
                             </button>
                             <div style="display: flex; gap: 8px; width: 100%;">
                                 <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; flex: 1;">
@@ -474,6 +487,9 @@
             
             const novoTotalGeral = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
 
+            // Determina automaticamente o encerramento oficial (Prioridade Tarde, senão Manhã)
+            const timeEndOficial = endT ? endT : (endM ? endM : '');
+
             try {
                 const docRef = doc(db, "service_orders", activeOsIdForHoraFim);
                 await updateDoc(docRef, {
@@ -481,7 +497,7 @@
                     timeEndManha: endM,
                     timeStartTarde: startT,
                     timeEndTarde: endT,
-                    timeEnd: endT,
+                    timeEnd: timeEndOficial,
                     totalHours: calc.totalHours,
                     totalHoursText: calc.totalHoursText,
                     valorHorasTotal: valorHorasTotal.toFixed(2),
@@ -671,13 +687,26 @@
                 docPDF.text(splitDescription, 22, y);
                 y += (splitDescription.length * 3.5);
 
-                // 5. Horários e Turnos
+                // 5. Horários e Turnos (Dinâmico: exibe apenas os turnos preenchidos)
                 desenharCabecalho("Horários e Turnos");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
-                docPDF.text(`• Manhã: ${formatarDataHora(order.timeStartManha || order.timeStart)} até ${formatarDataHora(order.timeEndManha)}`, 22, y);
-                y += 5;
-                docPDF.text(`• Tarde: ${formatarDataHora(order.timeStartTarde)} até ${order.timeEndTarde ? formatarDataHora(order.timeEndTarde) : 'Pendente'}`, 22, y);
+                
+                let temTurnoPDF = false;
+                if (order.timeStartManha && order.timeEndManha) {
+                    docPDF.text(`• Manhã: ${formatarDataHora(order.timeStartManha)} até ${formatarDataHora(order.timeEndManha)}`, 22, y);
+                    y += 5;
+                    temTurnoPDF = true;
+                }
+                if (order.timeStartTarde && order.timeEndTarde) {
+                    docPDF.text(`• Tarde: ${formatarDataHora(order.timeStartTarde)} até ${formatarDataHora(order.timeEndTarde)}`, 22, y);
+                    y += 5;
+                    temTurnoPDF = true;
+                }
+                if (!temTurnoPDF) {
+                    docPDF.text(`• Horários não especificados`, 22, y);
+                    y += 5;
+                }
 
                 // 6. VALOR TOTAL
                 desenharCabecalho("VALOR TOTAL");
