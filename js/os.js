@@ -53,18 +53,28 @@ async function loadClientsDropdown() {
 
 loadClientsDropdown();
 
-// Função para efetuar upload de múltiplos ficheiros para o ImgBB
-async function uploadMultiplosParaImgBB(fileInputId) {
-    const fileInput = document.getElementById(fileInputId);
-    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+// Função para efetuar upload de múltiplos anexos dinâmicos com título para o ImgBB
+async function uploadAnexosParaImgBB() {
+    const rows = document.querySelectorAll('.anexo-row');
+    if (!rows || rows.length === 0) {
         return []; 
     }
 
-    const imageUrls = [];
+    const attachments = [];
     const apiKey = "760f9d5337196e65847ca8351f92398f";
 
-    for (let i = 0; i < fileInput.files.length; i++) {
-        const file = fileInput.files[i];
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const titleInput = row.querySelector('.anexo-titulo');
+        const fileInput = row.querySelector('.anexo-ficheiro');
+        
+        const title = titleInput ? titleInput.value.trim() || `Anexo ${i + 1}` : `Anexo ${i + 1}`;
+        
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            continue; // Ignora linhas sem ficheiro selecionado
+        }
+
+        const file = fileInput.files[0];
         const formData = new FormData();
         formData.append("image", file);
 
@@ -76,7 +86,10 @@ async function uploadMultiplosParaImgBB(fileInputId) {
             
             const data = await response.json();
             if (data.success) {
-                imageUrls.push(data.data.url);
+                attachments.push({
+                    title: title,
+                    url: data.data.url
+                });
             } else {
                 console.error("Falha no ImgBB para a imagem:", file.name, data);
             }
@@ -85,7 +98,7 @@ async function uploadMultiplosParaImgBB(fileInputId) {
         }
     }
 
-    return imageUrls;
+    return attachments;
 }
 
 form.addEventListener('submit', async (e) => {
@@ -98,7 +111,7 @@ form.addEventListener('submit', async (e) => {
 
     alert("A processar dados e a guardar a Ordem de Serviço. Aguarde um instante...");
 
-    const imageUrls = await uploadMultiplosParaImgBB('os-image');
+    const attachments = await uploadAnexosParaImgBB();
     const selectedOption = clientSelect.options[clientSelect.selectedIndex];
 
     // 1. CÁLCULO DE HORAS TRABALHADAS
@@ -185,7 +198,8 @@ form.addEventListener('submit', async (e) => {
         totalValue: totalValue.toFixed(2),
         description: document.getElementById('description').value,
         paymentTerms: document.getElementById('payment-terms').value,
-        imageUrls: imageUrls || [], 
+        attachments: attachments || [], 
+        imageUrls: attachments.map(a => a.url), 
         technicianName: document.getElementById('technician-name').value,
         technicianSignature: techPad.toDataURL(),
         customerSignature: clientPad.toDataURL(),
