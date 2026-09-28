@@ -602,16 +602,17 @@
                 docPDF.setLineWidth(0.3);
                 docPDF.line(20, 18, 190, 18);
 
-                let y = 21;
+                let y = 22; // Margem inicial segura abaixo da linha do topo
 
                 function desenharCabecalho(titulo) {
+                    y += 1.5; // Espaço de respiro antes da faixa azul (equivalente a uma linha em branco)
                     docPDF.setFillColor(230, 235, 245);
                     docPDF.rect(20, y, 170, 4.5, 'F');
                     docPDF.setFont("helvetica", "bold");
                     docPDF.setFontSize(8.5);
                     docPDF.setTextColor(40, 40, 40);
                     docPDF.text(titulo, 22, y + 3.2);
-                    y += 6.5;
+                    y += 6.5; // Respiro perfeito após a faixa azul antes do texto começar
                 }
 
                 // 1. Empresa Responsável
@@ -620,10 +621,10 @@
                 docPDF.setFontSize(8);
                 docPDF.text(`Nome: ${empresa.nome}`, 22, y);
                 docPDF.text(`Razão social: ${empresa.razaoSocial}`, 102, y);
-                y += 4;
+                y += 4.5;
                 docPDF.text(`E-mail de contato: ${empresa.email}`, 22, y);
                 docPDF.text(`CNPJ: ${empresa.cnpj}`, 102, y);
-                y += 5;
+                y += 2;
 
                 // 2. Cliente
                 desenharCabecalho("Cliente");
@@ -631,12 +632,12 @@
                 docPDF.setFontSize(8);
                 docPDF.text(`Nome: ${clientInfo.name || order.clientName || 'N/A'}`, 22, y);
                 docPDF.text(`Razão social: ${clientInfo.razaoSocial || '-'}`, 102, y);
-                y += 4;
+                y += 4.5;
                 docPDF.text(`E-mail: ${clientInfo.email || '-'}`, 22, y);
                 docPDF.text(`CPF / CNPJ: ${clientInfo.document || '-'}`, 102, y);
-                y += 4;
+                y += 4.5;
                 docPDF.text(`Endereço: ${clientInfo.address || '-'}`, 22, y);
-                y += 5;
+                y += 2;
 
                 // 3. Equipamento
                 desenharCabecalho("Equipamento");
@@ -644,9 +645,9 @@
                 docPDF.setFontSize(8);
                 docPDF.text(`Equipamento: ${order.equipment || 'N/A'}`, 22, y);
                 docPDF.text(`Marca: ${order.brand || '-'} | Modelo: ${order.model || '-'}`, 102, y);
-                y += 4;
+                y += 4.5;
                 docPDF.text(`Matrícula / N° de Série: ${order.serialNumber || '-'}`, 22, y);
-                y += 5;
+                y += 2;
 
                 // 4. Serviços realizados
                 desenharCabecalho("Serviços realizados");
@@ -655,23 +656,23 @@
                 docPDF.text("Tipo:", 22, y);
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`${order.serviceNature || ''} - ${order.serviceArea || ''}`, 30, y);
-                y += 4;
+                y += 4.5;
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text("Descrição:", 22, y);
                 y += 3.5;
                 docPDF.setFont("helvetica", "normal");
                 const splitDescription = docPDF.splitTextToSize(order.description || 'Sem descrição', 165);
                 docPDF.text(splitDescription, 22, y);
-                y += (splitDescription.length * 3.5) + 3.5;
+                y += (splitDescription.length * 3.5) + 2;
 
                 // 5. Horários e Turnos
                 desenharCabecalho("Horários e Turnos");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
                 docPDF.text(`• Manhã: ${formatarDataHora(order.timeStartManha || order.timeStart)} até ${formatarDataHora(order.timeEndManha)}`, 22, y);
-                y += 4;
+                y += 4.5;
                 docPDF.text(`• Tarde: ${formatarDataHora(order.timeStartTarde)} até ${order.timeEndTarde ? formatarDataHora(order.timeEndTarde) : 'Pendente'}`, 22, y);
-                y += 5;
+                y += 2;
 
                 // 6. VALOR TOTAL
                 desenharCabecalho("VALOR TOTAL");
@@ -680,32 +681,32 @@
 
                 if (order.temHora === 'sim') {
                     docPDF.text(`• Total Horas Trabalhadas: ${order.totalHoursText || '0h'} (R$ ${order.valorHorasTotal || '0.00'})`, 22, y);
-                    y += 4;
+                    y += 4.5;
                 }
                 if (order.temKm === 'sim') {
                     docPDF.text(`• Deslocamento: ${order.totalKm || 0} Km (Ida: ${order.kmIda || 0} + Volta: ${order.kmVolta || 0}) - R$ ${order.valorKmTotal || '0.00'}`, 22, y);
-                    y += 4;
+                    y += 4.5;
                 }
                 if (order.temCombustivel === 'sim') {
                     docPDF.text(`• Combustível: ${order.combustivelLitros || 0} Litros - R$ ${order.valorCombustivelTotal || '0.00'}`, 22, y);
-                    y += 4;
+                    y += 4.5;
                 }
 
                 docPDF.setFont("helvetica", "bold");
                 docPDF.text(`• TOTAL GERAL: R$ ${order.totalValue || '0.00'}`, 22, y);
 
-                y += 4;
+                y += 4.5;
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
 
-                y += 5.5;
+                y += 2;
 
                 // 7. DADOS BANCÁRIOS & QR CODE PIX
                 desenharCabecalho("Dados Bancários / Pagamento PIX");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
                 docPDF.text(`• Banco: ${empresa.banco} | Agência: ${empresa.agencia} | Conta: ${empresa.conta}`, 22, y);
-                y += 4;
+                y += 4.5;
                 docPDF.text(`• Chave PIX (CNPJ): ${empresa.cnpj} | Favorecido: ${empresa.razaoSocial}`, 22, y);
 
                 const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${numOSFormatted}`);
@@ -718,7 +719,7 @@
                     docPDF.text("Escaneie para pagar", 154, y + 9);
                 }
 
-                y += 9.5; 
+                y += 8; 
 
                 // Assinaturas
                 docPDF.setLineWidth(0.2);
