@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Clientes - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.2">
+    <title>Início / Histórico - RG Soluções Técnicas</title>
+    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- Menu Lateral (Sidebar) com o Logótipo Padronizado -->
+        <!-- Menu Lateral (Sidebar) com o Logótipo -->
         <aside class="sidebar">
             <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
                 <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
             </div>
             <nav>
-                <a href="index.html">🏠 Início / Histórico</a>
-                <a href="clientes.html" class="active">👥 Gestão de Clientes</a>
+                <a href="index.html" class="active">🏠 Início / Histórico</a>
+                <a href="clientes.html">👥 Gestão de Clientes</a>
                 <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
                 
@@ -28,59 +32,165 @@
 
         <!-- Conteúdo Principal -->
         <main class="main-content">
+            <!-- Botão de menu para telemóveis -->
             <button class="menu-toggle" id="menuToggle">☰ Menu</button>
 
             <div class="container" style="max-width: 800px;">
-                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
+                <h2>Histórico de Ordens de Serviço</h2>
                 
-                <h2>Gestão de Clientes</h2>
-
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3 id="form-title" style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Novo Cliente</h3>
+                <!-- Secção de Filtros Compacta e Retrátil -->
+                <details style="background: #f8f9fa; padding: 10px 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ddd;">
+                    <summary style="font-weight: bold; cursor: pointer; color: #2c3e50; font-size: 14px; outline: none;">
+                        🔍 Filtros de Pesquisa (Clique para abrir/recolher)
+                    </summary>
                     
-                    <form id="client-form">
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Nome / Razão Social:</label>
-                            <input type="text" id="client-name" required placeholder="Ex: Empresa Exemplo Lda" style="width: 100%; padding: 8px; box-sizing: border-box;">
-                        </div>
-
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">E-mail:</label>
-                                <input type="email" id="client-email" placeholder="exemplo@email.com" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <!-- Filtro por Cliente -->
+                            <div style="flex: 1; min-width: 180px;">
+                                <label style="font-size: 12px; font-weight: bold;">Cliente:</label>
+                                <select id="filter-client" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
+                                    <option value="">Todos os clientes</option>
+                                </select>
                             </div>
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">CPF / CNPJ:</label>
-                                <input type="text" id="client-document" placeholder="00.000.000/0001-00" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            
+                            <!-- Filtro por Tipo de Manutenção -->
+                            <div style="flex: 1; min-width: 140px;">
+                                <label style="font-size: 12px; font-weight: bold;">Tipo:</label>
+                                <select id="filter-type" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
+                                    <option value="">Todos os tipos</option>
+                                    <option value="Corretiva">Corretiva</option>
+                                    <option value="Preventiva">Preventiva</option>
+                                    <option value="Garantia">Garantia</option>
+                                </select>
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Morada / Endereço:</label>
-                            <input type="text" id="client-address" placeholder="Rua, Número, Cidade" style="width: 100%; padding: 8px; box-sizing: border-box;">
-                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                            <!-- Data Início -->
+                            <div style="flex: 1; min-width: 130px;">
+                                <label style="font-size: 12px; font-weight: bold;">Início:</label>
+                                <input type="date" id="filter-start" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
+                            </div>
+                            
+                            <!-- Data Fim -->
+                            <div style="flex: 1; min-width: 130px;">
+                                <label style="font-size: 12px; font-weight: bold;">Fim:</label>
+                                <input type="date" id="filter-end" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
+                            </div>
 
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" id="btn-submit-client" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1;">Guardar Cliente</button>
-                            <button type="button" id="btn-cancel-edit" style="background: #6c757d; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none;">Cancelar</button>
+                            <!-- Botão Aplicar -->
+                            <div>
+                                <button type="button" id="apply-filters" style="padding: 7px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">Filtrar</button>
+                            </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                </details>
 
-                <div style="margin-top: 30px;">
-                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Clientes Registados</h3>
-                    <div id="clients-list">
-                        <p style="color: #666; text-align: center;">A carregar clientes...</p>
+                <!-- Lista de Ordens de Serviço -->
+                <div style="margin-top: 20px;">
+                    <div id="history-list">
+                        <p style="color: #666; text-align: center;">A carregar histórico...</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Script com Cache Busting (v=1.2) -->
+    <!-- Modal Personalizado para Atualizar Turnos -->
+    <div id="modal-hora-fim" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Atualizar Turnos e Encerramento</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Preencha apenas o(s) turno(s) em que trabalhou (Manhã e/ou Tarde).</p>
+            
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: bold;">Início Manhã:</label>
+                <input type="datetime-local" id="modal-start-manha" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: bold;">Final Manhã:</label>
+                <input type="datetime-local" id="modal-end-manha" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: bold;">Início Tarde:</label>
+                <input type="datetime-local" id="modal-start-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: bold;">Final Tarde:</label>
+                <input type="datetime-local" id="modal-end-tarde" style="width: 100%; padding: 6px; box-sizing: border-box;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="btn-cancelar-modal" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btn-salvar-modal" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar e Recalcular</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Ordem de Serviço -->
+    <div id="modal-editar-os" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">Editar Ordem de Serviço</h3>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: bold;">Equipamento:</label>
+                <input type="text" id="edit-equipment" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Marca:</label>
+                    <input type="text" id="edit-brand" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Modelo:</label>
+                    <input type="text" id="edit-model" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; font-weight: bold;">Matrícula / N° de Série:</label>
+                <input type="text" id="edit-serial" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Tipo de Manutenção:</label>
+                    <select id="edit-nature" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                        <option value="Corretiva">Corretiva</option>
+                        <option value="Preventiva">Preventiva</option>
+                        <option value="Garantia">Garantia</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 13px; font-weight: bold;">Condição Pagamento (dias):</label>
+                    <input type="text" id="edit-payment" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: bold;">Descrição do Serviço:</label>
+                <textarea id="edit-description" rows="3" style="width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="btn-cancelar-edit" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btn-salvar-edit" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Guardar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registo do Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log("Service Worker registado com sucesso!"))
+                    .catch((err) => console.log("Erro ao registar o Service Worker:", err));
+            });
+        }
+    </script>
+
+    <!-- Script com Cache Busting (v=3.0) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.2';
-        import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { db, auth } from './js/firebase-config.js?v=3.0';
+        import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
@@ -104,148 +214,692 @@
             });
         }
 
-        const btnLogout = document.getElementById('btn-logout');
-        if (btnLogout) {
-            btnLogout.addEventListener('click', async (e) => {
-                e.preventDefault();
-                await signOut(auth);
-                window.location.href = 'login.html';
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'login.html';
+        });
+
+        let allOrders = [];
+        let clientsMap = {};
+        let activeOsIdForHoraFim = null;
+        let activeOsIdForEdit = null;
+
+        function formatarDataHora(dateStr) {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const dia = String(d.getDate()).padStart(2, '0');
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const ano = d.getFullYear();
+            const hora = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            return `${dia}/${mes}/${ano} às ${hora}:${min}`;
+        }
+
+        function calcularMinutosTrabalhados(startM, endM, startT, endT, valorHoraFixo = 200.00) {
+            let minutosTotais = 0;
+
+            if (startM && endM) {
+                const diffM = new Date(endM) - new Date(startM);
+                if (diffM > 0) minutosTotais += diffM / (1000 * 60);
+            }
+
+            if (startT && endT) {
+                const diffT = new Date(endT) - new Date(startT);
+                if (diffT > 0) minutosTotais += diffT / (1000 * 60);
+            }
+
+            if (minutosTotais < 0) minutosTotais = 0;
+
+            const horasDecimais = minutosTotais / 60;
+            const valorHorasTotal = horasDecimais * Number(valorHoraFixo);
+
+            const horasExatas = Math.floor(minutosTotais / 60);
+            const minutosRestantes = Math.round(minutosTotais % 60);
+            const formatadoTexto = `${horasExatas}h ${minutosRestantes}m`;
+
+            return {
+                totalHours: horasDecimais.toFixed(2),
+                totalHoursText: formatadoTexto,
+                valorHorasTotal: valorHorasTotal.toFixed(2)
+            };
+        }
+
+        function gerarPayloadPix(chave, nome, cidade, valor, txid = "***") {
+            const chaveLimpa = chave.replace(/\D/g, '');
+
+            const format = (id, val) => {
+                const len = String(val.length).padStart(2, '0');
+                return `${id}${len}${val}`;
+            };
+
+            const normalize = (str) => {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            };
+
+            nome = normalize(nome).substring(0, 25);
+            cidade = normalize(cidade).substring(0, 15);
+
+            let gui = format("00", "br.gov.bcb.pix");
+            let key = format("01", chaveLimpa);
+            let merchantAccountInformation = format("26", gui + key);
+            
+            let mcc = format("52", "0000");
+            let currency = format("53", "986");
+            let amountStr = format("54", Number(valor).toFixed(2));
+            let country = format("58", "BR");
+            let merchantName = format("59", nome);
+            let merchantCity = format("60", cidade);
+            let additionalDataField = format("62", format("05", txid));
+            
+            let payloadWithoutCrc = merchantAccountInformation + mcc + currency + amountStr + country + merchantName + merchantCity + additionalDataField;
+            let payload = format("00", "01") + payloadWithoutCrc + "6304";
+            
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) !== 0) {
+                        crc = ((crc << 1) ^ 0x1021);
+                    } else {
+                        crc = (crc << 1);
+                    }
+                    crc &= 0xFFFF;
+                }
+            }
+            let crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
+            return payload + crcHex;
+        }
+
+        function getBase64ImageFromUrl(url) {
+            return new Promise((resolve) => {
+                if (!url) {
+                    resolve(null);
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg'));
+                    } catch (e) {
+                        console.warn("Erro ao converter imagem para Base64:", e);
+                        resolve(null);
+                    }
+                };
+                img.onerror = function() {
+                    console.warn("Não foi possível carregar a imagem:", url);
+                    resolve(null);
+                };
+                img.src = url;
             });
         }
 
-        const clientForm = document.getElementById('client-form');
-        const clientsListDiv = document.getElementById('clients-list');
-        const formTitle = document.getElementById('form-title');
-        const btnSubmitClient = document.getElementById('btn-submit-client');
-        const btnCancelEdit = document.getElementById('btn-cancel-edit');
-
-        let editingClientId = null;
-
-        async function loadClients() {
+        async function loadClientsFilter() {
             try {
-                const q = query(collection(db, "clients"));
-                const querySnapshot = await getDocs(q);
-                
-                clientsListDiv.innerHTML = "";
-                if (querySnapshot.empty) {
-                    clientsListDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum cliente registado.</p>";
-                    return;
-                }
-
-                let html = "";
+                const querySnapshot = await getDocs(collection(db, "clients"));
+                const selectClient = document.getElementById('filter-client');
                 querySnapshot.forEach((docSnap) => {
                     const client = docSnap.data();
-                    const clientId = docSnap.id;
-                    const clientName = client.name || client.razaoSocial || 'Sem nome';
-                    const clientEmail = client.email || '';
-                    const clientDoc = client.document || client.cnpj || '';
-                    const clientAddress = client.address || '';
+                    clientsMap[docSnap.id] = client;
+                    const option = document.createElement('option');
+                    option.value = docSnap.id;
+                    option.textContent = client.name || client.razaoSocial;
+                    selectClient.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar clientes para o filtro:", error);
+            }
+        }
 
-                    html += `
-                        <div style="background: white; border: 1px solid #ddd; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                            <strong style="font-size: 15px; color: #2c3e50;">${clientName}</strong><br>
-                            <span style="font-size: 13px; color: #555;"><strong>Documento:</strong> ${clientDoc || 'N/A'} | <strong>E-mail:</strong> ${clientEmail || 'N/A'}</span><br>
-                            <span style="font-size: 13px; color: #666;"><strong>Endereço:</strong> ${clientAddress || 'N/A'}</span>
-                            
-                            <div style="margin-top: 10px; display: flex; gap: 8px;">
-                                <button type="button" onclick="prepararEdicao('${clientId}', '${clientName.replace(/'/g, "\\'")}', '${clientEmail}', '${clientDoc}', '${clientAddress.replace(/'/g, "\\'")}')" style="background: #ffc107; color: #333; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+        async function loadHistory() {
+            const historyListDiv = document.getElementById('history-list');
+            try {
+                const q = query(collection(db, "service_orders"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                allOrders = [];
+                querySnapshot.forEach((docSnap) => {
+                    allOrders.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                renderHistory(allOrders);
+            } catch (error) {
+                console.error("Erro ao carregar histórico:", error);
+                historyListDiv.innerHTML = "<p style='color: red;'>Erro ao carregar os dados do histórico.</p>";
+            }
+        }
+
+        function calcularNumeroOS(order) {
+            if (order.osNumber) {
+                return String(order.osNumber).padStart(5, '0');
+            }
+            if (!allOrders || allOrders.length === 0) {
+                return "00013";
+            }
+            const ordersAsc = [...allOrders].reverse();
+            const index = ordersAsc.findIndex(o => o.id === order.id);
+            const num = (index !== -1) ? (13 + index) : (13 + allOrders.length);
+            return String(num).padStart(5, '0');
+        }
+
+        function renderHistory(orders) {
+            const historyListDiv = document.getElementById('history-list');
+            historyListDiv.innerHTML = "";
+
+            if (orders.length === 0) {
+                historyListDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 20px;'>Nenhuma Ordem de Serviço encontrada com os filtros selecionados.</p>";
+                return;
+            }
+
+            let html = "";
+            orders.forEach(order => {
+                const clientInfo = clientsMap[order.clientId] || {};
+                const clientName = clientInfo.name || order.clientName || "Cliente Desconhecido";
+                const numOSFormatted = calcularNumeroOS(order);
+                
+                const inicioManhaFmt = order.timeStartManha || order.timeStart ? formatarDataHora(order.timeStartManha || order.timeStart) : null;
+                const fimManhaFmt = order.timeEndManha ? formatarDataHora(order.timeEndManha) : null;
+                const inicioTardeFmt = order.timeStartTarde ? formatarDataHora(order.timeStartTarde) : null;
+                const fimTardeFmt = order.timeEndTarde ? formatarDataHora(order.timeEndTarde) : null;
+                
+                let turnosTextoHtml = '';
+                if (inicioManhaFmt && fimManhaFmt) {
+                    turnosTextoHtml += `<p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Manhã:</strong> ${inicioManhaFmt} até ${fimManhaFmt}</p>`;
+                }
+                if (inicioTardeFmt && fimTardeFmt) {
+                    turnosTextoHtml += `<p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Tarde:</strong> ${inicioTardeFmt} até ${fimTardeFmt}</p>`;
+                }
+                if (!turnosTextoHtml) {
+                    turnosTextoHtml = `<p style="margin: 4px 0; font-size: 13px; color: #d9534f; font-weight: bold;"><strong>Turnos:</strong> Pendente / Não preenchidos</p>`;
+                }
+
+                const temEncerramento = Boolean(order.timeEnd || order.timeEndTarde || order.timeEndManha);
+                const btnEncerramentoTexto = temEncerramento ? 'Editar Turnos/Encerramento' : 'Preencher Encerramento';
+                
+                const temFotos = (order.attachments && order.attachments.length > 0) || (order.imageUrls && order.imageUrls.length > 0) || order.imageUrl;
+                const badgeAnexo = temFotos ? `<span style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; display: inline-block; margin-top: 2px;">📷 Com Anexo(s)</span>` : '';
+
+                html += `
+                    <div style="background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px;">
+                            <div style="flex: 1;">
+                                <span style="background: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px; display: inline-block;">O.S. N° ${numOSFormatted}</span>
+                                <strong style="font-size: 16px; color: #2c3e50; word-break: break-word;">${clientName}</strong>
+                                ${badgeAnexo}
+                            </div>
+                            <span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #495057; white-space: nowrap;">${order.serviceNature || 'Corretiva'}</span>
+                        </div>
+                        
+                        <p style="margin: 6px 0; font-size: 14px; color: #555;"><strong>Equipamento:</strong> ${order.equipment || 'N/A'} (Marca: ${order.brand || '-'}, Modelo: ${order.model || '-'})</p>
+                        ${turnosTextoHtml}
+                        <p style="margin: 4px 0; font-size: 13px; color: #444;">
+                            <strong>Total Horas:</strong> ${order.totalHoursText || order.totalHours || '0'}h | <strong>Pagamento:</strong> Para ${order.paymentTerms || '-'} dias
+                        </p>
+                        <p style="margin: 4px 0; font-size: 14px;">
+                            <strong>Valor Total:</strong> <span style="color: #28a745; font-weight: bold;">R$ ${order.totalValue || '0.00'}</span>
+                        </p>
+
+                        <p style="margin: 8px 0 12px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><em>"${order.description || 'Sem descrição'}"</em></p>
+
+                        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <button onclick="gerarEPartilharPDF('${order.id}')" style="background: #28a745; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; width: 100%;">
+                                📄 Gerar Relatório
+                            </button>
+                            <button onclick="abrirModalHoraFim('${order.id}')" style="background: #ffc107; color: #333; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; width: 100%;">
+                                ⏱️ ${btnEncerramentoTexto}
+                            </button>
+                            <div style="display: flex; gap: 8px; width: 100%;">
+                                <button onclick="abrirModalEditar('${order.id}')" style="background: #17a2b8; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; flex: 1;">
                                     ✏️ Editar
                                 </button>
-                                <button type="button" onclick="excluirCliente('${clientId}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+                                <button onclick="excluirOS('${order.id}')" style="background: #dc3545; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; flex: 1;">
                                     🗑️ Excluir
                                 </button>
                             </div>
                         </div>
-                    `;
-                });
-                clientsListDiv.innerHTML = html;
-            } catch (error) {
-                console.error("Erro ao carregar clientes:", error);
-                clientsListDiv.innerHTML = "<p style='color: red;'>Erro ao carregar a lista de clientes.</p>";
-            }
+                    </div>
+                `;
+            });
+            historyListDiv.innerHTML = html;
         }
 
-        window.prepararEdicao = function(id, name, email, documentVal, address) {
-            editingClientId = id;
-            document.getElementById('client-name').value = name;
-            document.getElementById('client-email').value = email !== 'N/A' ? email : '';
-            document.getElementById('client-document').value = documentVal !== 'N/A' ? documentVal : '';
-            document.getElementById('client-address').value = address !== 'N/A' ? address : '';
+        window.abrirModalHoraFim = function(osId) {
+            activeOsIdForHoraFim = osId;
+            const order = allOrders.find(item => item.id === osId);
+            if (!order) return;
 
-            formTitle.textContent = "Editar Cliente";
-            btnSubmitClient.textContent = "Atualizar Cliente";
-            btnSubmitClient.style.background = "#ffc107";
-            btnSubmitClient.style.color = "#333";
-            btnCancelEdit.style.display = "inline-block";
+            document.getElementById('modal-start-manha').value = order.timeStartManha || order.timeStart || '';
+            document.getElementById('modal-end-manha').value = order.timeEndManha || '';
+            document.getElementById('modal-start-tarde').value = order.timeStartTarde || '';
+            document.getElementById('modal-end-tarde').value = order.timeEndTarde || '';
 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('modal-hora-fim').style.display = 'flex';
         };
 
-        btnCancelEdit.addEventListener('click', () => {
-            resetForm();
+        document.getElementById('btn-cancelar-modal').addEventListener('click', () => {
+            document.getElementById('modal-hora-fim').style.display = 'none';
+            activeOsIdForHoraFim = null;
         });
 
-        function resetForm() {
-            editingClientId = null;
-            clientForm.reset();
-            formTitle.textContent = "Adicionar Novo Cliente";
-            btnSubmitClient.textContent = "Guardar Cliente";
-            btnSubmitClient.style.background = "#28a745";
-            btnSubmitClient.style.color = "white";
-            btnCancelEdit.style.display = "none";
-        }
+        document.getElementById('btn-salvar-modal').addEventListener('click', async () => {
+            const startM = document.getElementById('modal-start-manha').value;
+            const endM = document.getElementById('modal-end-manha').value;
+            const startT = document.getElementById('modal-start-tarde').value;
+            const endT = document.getElementById('modal-end-tarde').value;
 
-        window.excluirCliente = async function(clientId) {
-            if (confirm("Tem certeza de que deseja excluir este cliente?")) {
-                try {
-                    await deleteDoc(doc(db, "clients", clientId));
-                    alert("Cliente excluído com sucesso!");
-                    loadClients();
-                } catch (error) {
-                    console.error("Erro ao excluir cliente:", error);
-                    alert("Ocorreu um erro ao excluir o cliente.");
-                }
-            }
-        };
+            const order = allOrders.find(item => item.id === activeOsIdForHoraFim);
+            const valorHoraRef = order && order.valorHora ? parseFloat(order.valorHora) : 200.00;
 
-        clientForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            const calc = calcularMinutosTrabalhados(startM, endM, startT, endT, valorHoraRef);
 
-            const name = document.getElementById('client-name').value;
-            const email = document.getElementById('client-email').value;
-            const documentVal = document.getElementById('client-document').value;
-            const address = document.getElementById('client-address').value;
+            const valorHorasTotal = order && order.temHora === 'nao' ? 0 : parseFloat(calc.valorHorasTotal);
+            const valorKmTotal = order && order.valorKmTotal ? parseFloat(order.valorKmTotal) : 0;
+            const valorCombustivelTotal = order && order.valorCombustivelTotal ? parseFloat(order.valorCombustivelTotal) : 0;
+            
+            const novoTotalGeral = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
+
+            // Determina automaticamente o encerramento oficial (Prioridade Tarde, senão Manhã)
+            const timeEndOficial = endT ? endT : (endM ? endM : '');
 
             try {
-                if (editingClientId) {
-                    const clientRef = doc(db, "clients", editingClientId);
-                    await updateDoc(clientRef, {
-                        name: name,
-                        email: email,
-                        document: documentVal,
-                        address: address
-                    });
-                    alert("Cliente atualizado com sucesso!");
-                } else {
-                    await addDoc(collection(db, "clients"), {
-                        name: name,
-                        email: email,
-                        document: documentVal,
-                        address: address,
-                        createdAt: new Date()
-                    });
-                    alert("Cliente registado com sucesso!");
-                }
+                const docRef = doc(db, "service_orders", activeOsIdForHoraFim);
+                await updateDoc(docRef, {
+                    timeStartManha: startM,
+                    timeEndManha: endM,
+                    timeStartTarde: startT,
+                    timeEndTarde: endT,
+                    timeEnd: timeEndOficial,
+                    totalHours: calc.totalHours,
+                    totalHoursText: calc.totalHoursText,
+                    valorHorasTotal: valorHorasTotal.toFixed(2),
+                    totalValue: novoTotalGeral
+                });
 
-                resetForm();
-                loadClients();
+                document.getElementById('modal-hora-fim').style.display = 'none';
+                alert("Turnos e encerramento atualizados com sucesso!");
+                loadHistory();
             } catch (error) {
-                console.error("Erro ao guardar cliente:", error);
-                alert("Ocorreu um erro ao processar os dados do cliente.");
+                console.error("Erro ao atualizar turnos:", error);
+                alert("Ocorreu um erro ao atualizar os dados.");
             }
         });
 
-        loadClients();
+        window.abrirModalEditar = function(osId) {
+            activeOsIdForEdit = osId;
+            const order = allOrders.find(item => item.id === osId);
+            if (!order) return;
+
+            document.getElementById('edit-equipment').value = order.equipment || '';
+            document.getElementById('edit-brand').value = order.brand || '';
+            document.getElementById('edit-model').value = order.model || '';
+            document.getElementById('edit-serial').value = order.serialNumber || '';
+            document.getElementById('edit-nature').value = order.serviceNature || 'Corretiva';
+            document.getElementById('edit-payment').value = order.paymentTerms || '';
+            document.getElementById('edit-description').value = order.description || '';
+
+            document.getElementById('modal-editar-os').style.display = 'flex';
+        };
+
+        document.getElementById('btn-cancelar-edit').addEventListener('click', () => {
+            document.getElementById('modal-editar-os').style.display = 'none';
+            activeOsIdForEdit = null;
+        });
+
+        document.getElementById('btn-salvar-edit').addEventListener('click', async () => {
+            const osId = activeOsIdForEdit;
+            if (!osId) return;
+
+            const updatedData = {
+                equipment: document.getElementById('edit-equipment').value,
+                brand: document.getElementById('edit-brand').value,
+                model: document.getElementById('edit-model').value,
+                serialNumber: document.getElementById('edit-serial').value,
+                serviceNature: document.getElementById('edit-nature').value,
+                paymentTerms: document.getElementById('edit-payment').value,
+                description: document.getElementById('edit-description').value
+            };
+
+            try {
+                const docRef = doc(db, "service_orders", osId);
+                await updateDoc(docRef, updatedData);
+
+                document.getElementById('modal-editar-os').style.display = 'none';
+                alert("Ordem de Serviço atualizada com sucesso!");
+                loadHistory();
+            } catch (error) {
+                console.error("Erro ao atualizar O.S.:", error);
+                alert("Ocorreu um erro ao atualizar a Ordem de Serviço.");
+            }
+        });
+
+        window.excluirOS = async function(osId) {
+            if (confirm("Tem a certeza de que pretende eliminar esta Ordem de Serviço do histórico?")) {
+                try {
+                    await deleteDoc(doc(db, "service_orders", osId));
+                    alert("Ordem de Serviço eliminada com sucesso!");
+                    loadHistory();
+                } catch (error) {
+                    console.error("Erro ao eliminar O.S.:", error);
+                    alert("Ocorreu um erro ao eliminar a Ordem de Serviço.");
+                }
+            }
+        };
+
+        window.gerarEPartilharPDF = async function(osId) {
+            try {
+                const order = allOrders.find(item => item.id === osId);
+                if (!order) {
+                    alert("Ordem de Serviço não encontrada!");
+                    return;
+                }
+
+                const clientInfo = clientsMap[order.clientId] || {};
+                const { jsPDF } = window.jspdf;
+                const docPDF = new jsPDF();
+
+                const empresa = {
+                    nome: "RG Soluções Técnicas",
+                    razaoSocial: "RG SOLUCOES TECNICAS LTDA",
+                    email: "gcrodeghiero@gmail.com",
+                    cnpj: "54.875.741/0001-45",
+                    banco: "748 - Sicredi",
+                    agencia: "0663",
+                    conta: "59490-8",
+                    cidade: "Porto Alegre"
+                };
+
+                const dataEmissao = new Date().toLocaleDateString('pt-BR');
+                const numOSFormatted = calcularNumeroOS(order) || "00013";
+
+                const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
+                if (logoBase64) {
+                    docPDF.addImage(logoBase64, 'PNG', 20, 6, 26, 11);
+                }
+
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(11);
+                docPDF.text("Orçamento / Manutenção Técnica", 50, 10);
+                
+                docPDF.setFontSize(9.5);
+                docPDF.setTextColor(0, 123, 255);
+                docPDF.text(`O.S. N°: ${numOSFormatted}`, 150, 10);
+
+                docPDF.setTextColor(0, 0, 0);
+                docPDF.setFontSize(7.5);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`Em: ${dataEmissao}`, 150, 14.5);
+
+                docPDF.setLineWidth(0.3);
+                docPDF.line(20, 18, 190, 18);
+
+                let y = 18; // Linha divisória do topo
+
+                function desenharCabecalho(titulo, isFirst = false) {
+                    if (!isFirst) {
+                        y += 12; // Espaço proporcional (3x) antes de cada bloco seguinte
+                    } else {
+                        y += 3; // Bloco "Empresa responsável" posicionado bem próximo à linha do topo
+                    }
+
+                    docPDF.setFillColor(230, 235, 245);
+                    docPDF.rect(20, y, 170, 5, 'F');
+                    docPDF.setFont("helvetica", "bold");
+                    docPDF.setFontSize(8.5);
+                    docPDF.setTextColor(40, 40, 40);
+                    docPDF.text(titulo, 22, y + 3.5);
+                    
+                    y += 9; // Espaço limpo abaixo da faixa azul (equivalente a uma linha em branco antes do texto)
+                }
+
+                // 1. Empresa Responsável
+                desenharCabecalho("Empresa responsável", true);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                docPDF.text(`Nome: ${empresa.nome}`, 22, y);
+                docPDF.text(`Razão social: ${empresa.razaoSocial}`, 102, y);
+                y += 5;
+                docPDF.text(`E-mail de contato: ${empresa.email}`, 22, y);
+                docPDF.text(`CNPJ: ${empresa.cnpj}`, 102, y);
+
+                // 2. Cliente
+                desenharCabecalho("Cliente");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                docPDF.text(`Nome: ${clientInfo.name || order.clientName || 'N/A'}`, 22, y);
+                docPDF.text(`Razão social: ${clientInfo.razaoSocial || '-'}`, 102, y);
+                y += 5;
+                docPDF.text(`E-mail: ${clientInfo.email || '-'}`, 22, y);
+                docPDF.text(`CPF / CNPJ: ${clientInfo.document || '-'}`, 102, y);
+                y += 5;
+                docPDF.text(`Endereço: ${clientInfo.address || '-'}`, 22, y);
+
+                // 3. Equipamento
+                desenharCabecalho("Equipamento");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                docPDF.text(`Equipamento: ${order.equipment || 'N/A'}`, 22, y);
+                docPDF.text(`Marca: ${order.brand || '-'} | Modelo: ${order.model || '-'}`, 102, y);
+                y += 5;
+                docPDF.text(`Matrícula / N° de Série: ${order.serialNumber || '-'}`, 22, y);
+
+                // 4. Serviços realizados
+                desenharCabecalho("Serviços realizados");
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(8);
+                docPDF.text("Tipo:", 22, y);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`${order.serviceNature || ''} - ${order.serviceArea || ''}`, 30, y);
+                y += 5;
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Descrição:", 22, y);
+                y += 4;
+                docPDF.setFont("helvetica", "normal");
+                const splitDescription = docPDF.splitTextToSize(order.description || 'Sem descrição', 165);
+                docPDF.text(splitDescription, 22, y);
+                y += (splitDescription.length * 3.5);
+
+                // 5. Horários e Turnos (Dinâmico: exibe apenas os turnos preenchidos)
+                desenharCabecalho("Horários e Turnos");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                
+                let temTurnoPDF = false;
+                if (order.timeStartManha && order.timeEndManha) {
+                    docPDF.text(`• Manhã: ${formatarDataHora(order.timeStartManha)} até ${formatarDataHora(order.timeEndManha)}`, 22, y);
+                    y += 5;
+                    temTurnoPDF = true;
+                }
+                if (order.timeStartTarde && order.timeEndTarde) {
+                    docPDF.text(`• Tarde: ${formatarDataHora(order.timeStartTarde)} até ${formatarDataHora(order.timeEndTarde)}`, 22, y);
+                    y += 5;
+                    temTurnoPDF = true;
+                }
+                if (!temTurnoPDF) {
+                    docPDF.text(`• Horários não especificados`, 22, y);
+                    y += 5;
+                }
+
+                // 6. VALOR TOTAL
+                desenharCabecalho("VALOR TOTAL");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+
+                if (order.temHora === 'sim') {
+                    docPDF.text(`• Total Horas Trabalhadas: ${order.totalHoursText || '0h'} (R$ ${order.valorHorasTotal || '0.00'})`, 22, y);
+                    y += 5;
+                }
+                if (order.temKm === 'sim') {
+                    docPDF.text(`• Deslocamento: ${order.totalKm || 0} Km (Ida: ${order.kmIda || 0} + Volta: ${order.kmVolta || 0}) - R$ ${order.valorKmTotal || '0.00'}`, 22, y);
+                    y += 5;
+                }
+                if (order.temCombustivel === 'sim') {
+                    docPDF.text(`• Combustível: ${order.combustivelLitros || 0} Litros - R$ ${order.valorCombustivelTotal || '0.00'}`, 22, y);
+                    y += 5;
+                }
+
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text(`• TOTAL GERAL: R$ ${order.totalValue || '0.00'}`, 22, y);
+
+                y += 5;
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
+
+                // 7. DADOS BANCÁRIOS & QR CODE PIX
+                desenharCabecalho("Dados Bancários / Pagamento PIX");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                docPDF.text(`• Banco: ${empresa.banco} | Agência: ${empresa.agencia} | Conta: ${empresa.conta}`, 22, y);
+                y += 5;
+                docPDF.text(`• Chave PIX (CNPJ): ${empresa.cnpj} | Favorecido: ${empresa.razaoSocial}`, 22, y);
+
+                const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${numOSFormatted}`);
+                const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixPayload)}`;
+                
+                const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
+                if (pixBase64) {
+                    docPDF.addImage(pixBase64, 'PNG', 156, (y - 9) + 8, 15, 15);
+                    docPDF.setFontSize(6);
+                    docPDF.text("Escaneie para pagar", 154, (y + 8) + 8);
+                }
+
+                y += 8; 
+
+                // Assinaturas
+                let sigY = y + 20; 
+                docPDF.setLineWidth(0.2);
+                docPDF.line(20, sigY + 10, 90, sigY + 10);
+                docPDF.line(120, sigY + 10, 190, sigY + 10);
+
+                docPDF.setFontSize(7);
+                docPDF.text("ASSINATURA DO CLIENTE", 38, sigY + 13.5);
+                docPDF.text("ASSINATURA TÉCNICO RESPONSÁVEL", 128, sigY + 13.5);
+
+                if (order.technicianSignature) {
+                    docPDF.addImage(order.technicianSignature, 'PNG', 125, sigY - 4, 45, 12);
+                }
+
+                if (order.customerSignature) {
+                    docPDF.addImage(order.customerSignature, 'PNG', 25, sigY - 4, 45, 12);
+                }
+
+                // ANEXOS (Apenas se existirem, geram a 2ª página)
+                const listaAnexos = order.attachments || (order.imageUrls ? order.imageUrls.map((url, idx) => ({ title: `Anexo ${idx + 1}`, url })) : []);
+                
+                if (listaAnexos.length > 0) {
+                    docPDF.addPage();
+                    let anexoY = 20;
+
+                    docPDF.setFillColor(230, 235, 245);
+                    docPDF.rect(20, anexoY, 170, 6, 'F');
+                    docPDF.setFont("helvetica", "bold");
+                    docPDF.setFontSize(9.5);
+                    docPDF.setTextColor(40, 40, 40);
+                    docPDF.text("Anexo(s):", 22, anexoY + 4);
+                    
+                    anexoY += 12;
+
+                    for (let i = 0; i < listaAnexos.length; i++) {
+                        const anexo = listaAnexos[i];
+                        const imgBase64 = await getBase64ImageFromUrl(anexo.url);
+                        
+                        if (imgBase64) {
+                            if (anexoY + 70 > 270) {
+                                docPDF.addPage();
+                                anexoY = 20;
+                            }
+
+                            docPDF.setFont("helvetica", "bold");
+                            docPDF.setFontSize(9);
+                            docPDF.text(`• ${anexo.title || `Anexo ${i + 1}`}`, 20, anexoY);
+                            anexoY += 5;
+
+                            docPDF.addImage(imgBase64, 'JPEG', 35, anexoY, 140, 60);
+                            anexoY += 68;
+                        }
+                    }
+                }
+
+                const pdfBlob = docPDF.output('blob');
+                
+                const rawClientName = clientInfo.name || order.clientName || "Cliente";
+                const safeClientName = rawClientName.replace(/[^a-zA-Z0-9]/g, "_");
+                const refDateStr = order.timeStartManha || order.timeStart || new Date();
+                const dPdf = new Date(refDateStr);
+                const anoPdf = dPdf.getFullYear();
+                const mesPdf = String(dPdf.getMonth() + 1).padStart(2, '0');
+                const diaPdf = String(dPdf.getDate()).padStart(2, '0');
+                
+                const fileName = `Relatorio_OS_${numOSFormatted}_${safeClientName}_${anoPdf}-${mesPdf}-${diaPdf}.pdf`;
+                const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    try {
+                        await navigator.share({
+                            title: `Relatório Técnico OS ${numOSFormatted} - RG Soluções`,
+                            text: `Segue o relatório técnico referente ao equipamento ${order.equipment}.`,
+                            files: [pdfFile],
+                        });
+                        return;
+                    } catch (error) {
+                        if (error.name === 'AbortError') return;
+                    }
+                }
+
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pdfUrl;
+                downloadLink.download = fileName;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                alert(`Relatório PDF da O.S. N° ${numOSFormatted} gerado com sucesso!`);
+
+            } catch (error) {
+                console.error("Erro ao gerar o relatório PDF:", error);
+                alert("Ocorreu um erro ao processar o relatório.");
+            }
+        };
+
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            const selectedClient = document.getElementById('filter-client').value;
+            const selectedType = document.getElementById('filter-type').value;
+            const startDate = document.getElementById('filter-start').value;
+            const endDate = document.getElementById('filter-end').value;
+
+            const filtered = allOrders.filter(order => {
+                if (selectedClient && order.clientId !== selectedClient) {
+                    return false;
+                }
+                if (selectedType && order.serviceNature !== selectedType) {
+                    return false;
+                }
+                const refDate = order.timeStartManha || order.timeStart;
+                if (refDate) {
+                    const orderDateStr = refDate.split('T')[0];
+                    if (startDate && orderDateStr < startDate) {
+                        return false;
+                    }
+                    if (endDate && orderDateStr > endDate) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            renderHistory(filtered);
+        });
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadClientsFilter();
+            await loadHistory();
+        });
     </script>
 </body>
 </html>
