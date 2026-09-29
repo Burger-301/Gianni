@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <link rel="stylesheet" href="css/style.css?v=3.1">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
@@ -188,15 +188,27 @@
         }
     </script>
 
-    <!-- Script com Cache Busting (v=3.0) -->
+    <!-- Script com Cache Busting (v=3.1) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=3.0';
+        import { db, auth } from './js/firebase-config.js?v=3.1';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+        let authChecked = false;
+
         onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = 'login.html';
+            authChecked = true;
+            if (!user) {
+                window.location.href = 'login.html';
+            }
         });
+
+        // Margem de segurança de 2 segundos para o carregamento correto da sessão no PWA
+        setTimeout(() => {
+            if (!authChecked && !auth.currentUser) {
+                window.location.href = 'login.html';
+            }
+        }, 2000);
 
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.querySelector('.sidebar');
@@ -505,8 +517,6 @@
             const valorCombustivelTotal = order && order.valorCombustivelTotal ? parseFloat(order.valorCombustivelTotal) : 0;
             
             const novoTotalGeral = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
-
-            // Determina automaticamente o encerramento oficial (Prioridade Tarde, senão Manhã)
             const timeEndOficial = endT ? endT : (endM ? endM : '');
 
             try {
@@ -640,13 +650,13 @@
                 docPDF.setLineWidth(0.3);
                 docPDF.line(20, 18, 190, 18);
 
-                let y = 18; // Linha divisória do topo
+                let y = 18;
 
                 function desenharCabecalho(titulo, isFirst = false) {
                     if (!isFirst) {
-                        y += 12; // Espaço proporcional (3x) antes de cada bloco seguinte
+                        y += 12;
                     } else {
-                        y += 3; // Bloco "Empresa responsável" posicionado bem próximo à linha do topo
+                        y += 3;
                     }
 
                     docPDF.setFillColor(230, 235, 245);
@@ -656,10 +666,9 @@
                     docPDF.setTextColor(40, 40, 40);
                     docPDF.text(titulo, 22, y + 3.5);
                     
-                    y += 9; // Espaço limpo abaixo da faixa azul (equivalente a uma linha em branco antes do texto)
+                    y += 9;
                 }
 
-                // 1. Empresa Responsável
                 desenharCabecalho("Empresa responsável", true);
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -669,7 +678,6 @@
                 docPDF.text(`E-mail de contato: ${empresa.email}`, 22, y);
                 docPDF.text(`CNPJ: ${empresa.cnpj}`, 102, y);
 
-                // 2. Cliente
                 desenharCabecalho("Cliente");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -681,7 +689,6 @@
                 y += 5;
                 docPDF.text(`Endereço: ${clientInfo.address || '-'}`, 22, y);
 
-                // 3. Equipamento
                 desenharCabecalho("Equipamento");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -690,7 +697,6 @@
                 y += 5;
                 docPDF.text(`Matrícula / N° de Série: ${order.serialNumber || '-'}`, 22, y);
 
-                // 4. Serviços realizados
                 desenharCabecalho("Serviços realizados");
                 docPDF.setFont("helvetica", "bold");
                 docPDF.setFontSize(8);
@@ -706,7 +712,6 @@
                 docPDF.text(splitDescription, 22, y);
                 y += (splitDescription.length * 3.5);
 
-                // 5. Horários e Turnos (Dinâmico: exibe apenas os turnos preenchidos)
                 desenharCabecalho("Horários e Turnos");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -727,7 +732,6 @@
                     y += 5;
                 }
 
-                // 6. VALOR TOTAL
                 desenharCabecalho("VALOR TOTAL");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -752,7 +756,6 @@
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text(`• Condição de Pagamento: Pagamento para ${order.paymentTerms || '30'} dias`, 22, y);
 
-                // 7. DADOS BANCÁRIOS & QR CODE PIX
                 desenharCabecalho("Dados Bancários / Pagamento PIX");
                 docPDF.setFont("helvetica", "normal");
                 docPDF.setFontSize(8);
@@ -772,7 +775,6 @@
 
                 y += 8; 
 
-                // Assinaturas
                 let sigY = y + 20; 
                 docPDF.setLineWidth(0.2);
                 docPDF.line(20, sigY + 10, 90, sigY + 10);
@@ -790,7 +792,6 @@
                     docPDF.addImage(order.customerSignature, 'PNG', 25, sigY - 4, 45, 12);
                 }
 
-                // ANEXOS (Apenas se existirem, geram a 2ª página)
                 const listaAnexos = order.attachments || (order.imageUrls ? order.imageUrls.map((url, idx) => ({ title: `Anexo ${idx + 1}`, url })) : []);
                 
                 if (listaAnexos.length > 0) {
