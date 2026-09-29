@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Ordem de Serviço - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.6">
+    <link rel="stylesheet" href="css/style.css?v=1.7">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
     <!-- Signature Pad CDN -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 </head>
@@ -264,8 +266,19 @@
         });
     </script>
 
+    <!-- Registo do Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log("Service Worker registado com sucesso!"))
+                    .catch((err) => console.log("Erro ao registar o Service Worker:", err));
+            });
+        }
+    </script>
+
     <script type="module">
-        import { auth } from './js/firebase-config.js?v=1.6';
+        import { auth } from './js/firebase-config.js?v=1.7';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
@@ -299,7 +312,7 @@
         }
     </script>
 
-    <!-- Script principal da O.S. com Cache Busting (v=1.6) -->
-    <script type="module" src="js/os.js?v=1.6"></script>
+    <!-- Script principal da O.S. com Cache Busting (v=1.7) -->
+    <script type="module" src="js/os.js?v=1.7"></script>
 </body>
 </html>
