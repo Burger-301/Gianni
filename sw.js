@@ -1,5 +1,6 @@
-const CACHE_NAME = 'rg-solucoes-v2';
+const CACHE_NAME = 'rg-solucoes-v3';
 const assetsToCache = [
+    './',
     './index.html',
     './clientes.html',
     './nova-os.html',
@@ -12,9 +13,7 @@ const assetsToCache = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(assetsToCache).catch((err) => {
-                console.log('Aviso ao carregar cache:', err);
-            });
+            return cache.addAll(assetsToCache);
         })
     );
     self.skipWaiting();
@@ -36,10 +35,20 @@ self.addEventListener('activate', (event) => {
     self.clientsClaim();
 });
 
-// Interceção de pedidos (Network First, com fallback para cache)
+// Interceção de pedidos com suporte a navegação PWA
 self.addEventListener('fetch', (event) => {
-    // Ignora pedidos externos (como Firebase, CDNs de PDF, etc.) para evitar conflitos
     if (!event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
+    // Se for um pedido de abertura de página (navegação), garante que o index.html é servido
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .catch(() => {
+                    return caches.match('./index.html') || caches.match('./');
+                })
+        );
         return;
     }
 
