@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.8">
+    <link rel="stylesheet" href="css/style.css?v=1.9">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
@@ -104,7 +104,7 @@
 
     <!-- Script Principal -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.8';
+        import { db, auth } from './js/firebase-config.js?v=1.9';
         import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -154,7 +154,17 @@
 
         let allHE = [];
 
-        // Função auxiliar para formatar a data/hora para o formato dd/mm/aaaa HH:MM
+        // Função para formatar a data yyyy-mm-dd para dd/mm/aaaa
+        function formatDateBR(dateStr) {
+            if (!dateStr) return 'N/A';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        // Função para formatar data/hora para dd/mm/aaaa HH:MM
         function formatDateTimeBR(isoString) {
             if (!isoString) return 'N/A';
             const [datePart, timePart] = isoString.split('T');
@@ -183,13 +193,14 @@
 
                 let html = "";
                 allHE.forEach((item) => {
+                    const dataFormatada = formatDateBR(item.date);
                     const inicioFormatado = formatDateTimeBR(item.start);
                     const fimFormatado = formatDateTimeBR(item.end);
 
                     html += `
                         <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #17a2b8; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <strong style="font-size: 14px; color: #2c3e50;">Data do Registo: ${item.date || 'N/A'} (R$ ${item.valorHora || 38.63}/h)</strong>
+                                <strong style="font-size: 14px; color: #2c3e50;">Data: ${dataFormatada} (R$ ${item.valorHora || 38.63}/h)</strong>
                                 <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold;">R$ ${item.totalValue || '0.00'}</span>
                             </div>
                             <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Início:</strong> ${inicioFormatado}</p>
@@ -246,7 +257,7 @@
                 somaValorTotal += valorNum;
 
                 dadosExcel.push({
-                    "Dia / Data": item.date || '',
+                    "Dia / Data": formatDateBR(item.date),
                     "Período / Horário": periodoStr,
                     "Descrição / Motivo": item.reason || '',
                     "Carga Horária": item.totalHoursText || `${item.totalHours}h`,
