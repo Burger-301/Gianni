@@ -1,6 +1,5 @@
-const CACHE_NAME = 'rg-solucoes-v3';
+const CACHE_NAME = 'rg-solucoes-v4';
 const assetsToCache = [
-    './',
     './index.html',
     './clientes.html',
     './nova-os.html',
@@ -9,7 +8,7 @@ const assetsToCache = [
     './ig/ico.png'
 ];
 
-// Instalação do Service Worker
+// Instalação do Service Worker e criação da nova cache limpa
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
@@ -19,7 +18,7 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
 
-// Ativação e limpeza de caches antigas
+// Ativação e eliminação imediata de todas as caches antigas
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -35,20 +34,9 @@ self.addEventListener('activate', (event) => {
     self.clientsClaim();
 });
 
-// Interceção de pedidos com suporte a navegação PWA
+// Interceção de pedidos correta (cada página abre o seu ficheiro respetivo)
 self.addEventListener('fetch', (event) => {
     if (!event.request.url.startsWith(self.location.origin)) {
-        return;
-    }
-
-    // Se for um pedido de abertura de página (navegação), garante que o index.html é servido
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request)
-                .catch(() => {
-                    return caches.match('./index.html') || caches.match('./');
-                })
-        );
         return;
     }
 
