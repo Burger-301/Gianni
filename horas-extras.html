@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.4">
+    <link rel="stylesheet" href="css/style.css?v=1.6">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
@@ -40,7 +40,7 @@
                 
                 <h2>Registo de Horas Extras</h2>
 
-                <!-- Painel de Relatório Excel e Importação Automática -->
+                <!-- Painel de Relatório Excel -->
                 <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ced4da; display: flex; flex-direction: column; gap: 12px;">
                     <h3 style="margin: 0; color: #2c3e50; font-size: 15px;">📊 Relatório Consolidado para Excel (.xlsx)</h3>
                     
@@ -52,11 +52,6 @@
                         <div>
                             <button type="button" id="btn-gerar-excel" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">📥 Gerar Relatório Excel (.xlsx)</button>
                         </div>
-                    </div>
-
-                    <div style="border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span style="font-size: 12px; color: #555;">Carregar automaticamente os 13 dias (a R$ 38,63/h):</span>
-                        <button type="button" id="btn-importar-lote" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">⚡ Importar 13 Dias Automaticamente</button>
                     </div>
                 </div>
 
@@ -98,9 +93,9 @@
 
                 <!-- Lista de Registos -->
                 <div style="margin-top: 30px;">
-                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Histórico de Registos</h3>
+                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Histórico de Registos na Nuvem</h3>
                     <div id="he-list">
-                        <p style="color: #666; text-align: center;">A carregar registos...</p>
+                        <p style="color: #666; text-align: center;">A carregar registos da nuvem...</p>
                     </div>
                 </div>
             </div>
@@ -109,18 +104,25 @@
 
     <!-- Script Principal -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js';
+        import { db, auth } from './js/firebase-config.js?v=1.6';
         import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         let authChecked = false;
+
         onAuthStateChanged(auth, (user) => {
             authChecked = true;
-            if (!user) window.location.href = 'login.html';
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                loadHorasExtras();
+            }
         });
 
         setTimeout(() => {
-            if (!authChecked && !auth.currentUser) window.location.href = 'login.html';
+            if (!authChecked && !auth.currentUser) {
+                window.location.href = 'login.html';
+            }
         }, 2000);
 
         // Menu Mobile
@@ -144,7 +146,6 @@
             window.location.href = 'login.html';
         });
 
-        // Preencher data atual e input de mês atual por defeito
         const hoje = new Date();
         document.getElementById('he-date').valueAsDate = hoje;
         const anoAtual = hoje.getFullYear();
@@ -167,7 +168,7 @@
                 listDiv.innerHTML = "";
                 
                 if (allHE.length === 0) {
-                    listDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum registo encontrado.</p>";
+                    listDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum registo encontrado na nuvem.</p>";
                     return;
                 }
 
@@ -189,32 +190,30 @@
                 });
                 listDiv.innerHTML = html;
             } catch (error) {
-                console.error("Erro ao carregar:", error);
+                console.error("Erro ao carregar do Firestore:", error);
+                document.getElementById('he-list').innerHTML = `<p style='color: red;'>Erro ao carregar da nuvem: ${error.message}</p>`;
             }
         }
 
         // Gerar Relatório Excel Estruturado (.xlsx)
         document.getElementById('btn-gerar-excel').addEventListener('click', () => {
-            const mesAnoValor = document.getElementById('rel-mes-ano').value; // Formato "YYYY-MM"
+            const mesAnoValor = document.getElementById('rel-mes-ano').value;
             if (!mesAnoValor) {
                 alert("Por favor, selecione o mês e o ano!");
                 return;
             }
 
             const [anoSel, mesSel] = mesAnoValor.split('-');
-            
-            // Filtrar registos do mês selecionado
             const itensDoMes = allHE.filter(item => {
                 if (!item.date) return false;
                 return item.date.startsWith(`${anoSel}-${mesSel}`);
             });
 
             if (itensDoMes.length === 0) {
-                alert(`Não existem registos de horas extras para o mês ${mesSel}/${anoSel}!`);
+                alert(`Não existem registos para o mês ${mesSel}/${anoSel}!`);
                 return;
             }
 
-            // Preparar dados com o cabeçalho exato pedido
             let dadosExcel = [];
             let somaValorTotal = 0;
 
@@ -238,7 +237,6 @@
                 });
             });
 
-            // Adicionar linha de totalizador financeiro no final
             dadosExcel.push({
                 "Dia / Data": "TOTAL GERAL",
                 "Período / Horário": "",
@@ -252,77 +250,25 @@
             XLSX.utils.book_append_sheet(workbook, worksheet, "Horas Extras");
 
             const wscols = [
-                {wch: 15}, // Dia / Data
-                {wch: 22}, // Período / Horário
-                {wch: 35}, // Descrição / Motivo
-                {wch: 15}, // Carga Horária
-                {wch: 18}  // Valor Total (R$)
+                {wch: 15}, {wch: 22}, {wch: 35}, {wch: 15}, {wch: 18}
             ];
             worksheet['!cols'] = wscols;
 
             XLSX.writeFile(workbook, `Relatorio_Horas_Extras_${mesSel}_${anoSel}.xlsx`);
         });
 
-        // Botão para importar automaticamente os 13 dias com o valor 38.63
-        document.getElementById('btn-importar-lote').addEventListener('click', async () => {
-            if (!confirm("Deseja importar automaticamente os 13 registos considerando o valor de R$ 38,63/h?")) return;
-
-            const anoMesBase = document.getElementById('rel-mes-ano').value || `${anoAtual}-${mesAtual}`;
-            const valorHoraLote = 38.63;
-            
-            const listaParaImportar = [
-                { dia: "01", startH: "21:00", endH: "00:30", motivo: "Stream 9.5", horasTxt: "3h 30m", dec: 3.5 },
-                { dia: "04", startH: "13:00", endH: "17:00", motivo: "Florense e Sec. Tecmatic", horasTxt: "4h 0m", dec: 4.0 },
-                { dia: "05", startH: "07:00", endH: "11:30", motivo: "Esquadra 1", horasTxt: "4h 30m", dec: 4.5 },
-                { dia: "08", startH: "07:00", endH: "16:00", motivo: "HOZMA (Feriado - com intervalo)", horasTxt: "17h 30m", dec: 17.5 },
-                { dia: "14", startH: "17:30", endH: "19:30", motivo: "Coladeira IMAI (comando cascata)", horasTxt: "2h 0m", dec: 2.0 },
-                { dia: "17", startH: "17:30", endH: "18:30", motivo: "Pane elétrica na HOZMA", horasTxt: "1h 0m", dec: 1.0 },
-                { dia: "18", startH: "13:30", endH: "17:00", motivo: "Esquadra 2", horasTxt: "3h 30m", dec: 3.5 },
-                { dia: "19", startH: "07:00", endH: "10:00", motivo: "Finalizar esquadra 2", horasTxt: "3h 0m", dec: 3.0 },
-                { dia: "22", startH: "17:30", endH: "19:30", motivo: "Rover", horasTxt: "2h 0m", dec: 2.0 },
-                { dia: "23", startH: "17:30", endH: "20:00", motivo: "Forno L1", horasTxt: "2h 30m", dec: 2.5 },
-                { dia: "25", startH: "13:30", endH: "18:00", motivo: "Rover", horasTxt: "4h 30m", dec: 4.5 },
-                { dia: "27", startH: "07:00", endH: "17:30", motivo: "Rover (Domingo - com intervalo)", horasTxt: "19h 0m", dec: 19.0 },
-                { dia: "28", startH: "17:30", endH: "20:00", motivo: "Esquadra Florense", horasTxt: "2h 30m", dec: 2.5 }
-            ];
-
-            try {
-                for (let item of listaParaImportar) {
-                    const dataCompleta = `${anoMesBase}-${item.dia}`;
-                    const valorTotalCalc = (item.dec * valorHoraLote).toFixed(2);
-
-                    await addDoc(collection(db, "horas_extras"), {
-                        date: dataCompleta,
-                        valorHora: valorHoraLote,
-                        start: `${dataCompleta}T${item.startH}`,
-                        end: `${dataCompleta}T${item.endH}`,
-                        reason: item.motivo,
-                        totalHours: String(item.dec),
-                        totalHoursText: item.horasTxt,
-                        totalValue: valorTotalCalc,
-                        createdAt: new Date()
-                    });
-                }
-                alert("Todos os 13 registos foram importados com sucesso a R$ 38,63/h!");
-                loadHorasExtras();
-            } catch (err) {
-                console.error("Erro ao importar lote:", err);
-                alert("Erro ao importar os dados automaticamente.");
-            }
-        });
-
         window.excluirHE = async function(id) {
-            if (confirm("Tem a certeza de que pretende eliminar este registo?")) {
+            if (confirm("Tem a certeza de que pretende eliminar este registo da nuvem?")) {
                 try {
                     await deleteDoc(doc(db, "horas_extras", id));
                     loadHorasExtras();
                 } catch (error) {
-                    alert("Erro ao eliminar.");
+                    alert("Erro ao eliminar: " + error.message);
                 }
             }
         };
 
-        // Submeter formulário manual
+        const heForm = document.getElementById('he-form');
         heForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const date = document.getElementById('he-date').value;
@@ -349,17 +295,16 @@
                     totalValue: valorTotal,
                     createdAt: new Date()
                 });
-                alert("Registo guardado com sucesso!");
+                alert("Registo sincronizado com sucesso na nuvem!");
                 heForm.reset();
                 document.getElementById('he-date').valueAsDate = new Date();
                 document.getElementById('he-valor-hora').value = valorHora;
                 loadHorasExtras();
             } catch (error) {
-                alert("Erro ao guardar.");
+                console.error("Erro ao guardar no Firestore:", error);
+                alert("Erro ao guardar na nuvem: " + error.message);
             }
         });
-
-        loadHorasExtras();
     </script>
 </body>
 </html>
