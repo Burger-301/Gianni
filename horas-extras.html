@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.3">
+    <link rel="stylesheet" href="css/style.css?v=1.4">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
@@ -22,7 +22,7 @@
                 <a href="index.html">🏠 Início / Histórico</a>
                 <a href="clientes.html">👥 Gestão de Clientes</a>
                 <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
-                <a href="horas-extras.html" class="active">⏱️️ Horas Extras</a>
+                <a href="horas-extras.html" class="active">⏱ Horas Extras</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
                 
                 <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
@@ -55,8 +55,8 @@
                     </div>
 
                     <div style="border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span style="font-size: 12px; color: #555;">Carregar automaticamente a lista enviada para testes:</span>
-                        <button type="button" id="btn-importar-lote" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">⚡ Importar Dados do Mês Automaticamente</button>
+                        <span style="font-size: 12px; color: #555;">Carregar automaticamente os 13 dias (a R$ 38,63/h):</span>
+                        <button type="button" id="btn-importar-lote" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">⚡ Importar 13 Dias Automaticamente</button>
                     </div>
                 </div>
 
@@ -72,7 +72,7 @@
                             </div>
                             <div style="flex: 1; min-width: 150px;">
                                 <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Valor da Hora (R$):</label>
-                                <input type="number" step="0.01" id="he-valor-hora" value="200.00" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+                                <input type="number" step="0.01" id="he-valor-hora" value="38.63" required style="width: 100%; padding: 8px; box-sizing: border-box;">
                             </div>
                         </div>
 
@@ -176,7 +176,7 @@
                     html += `
                         <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #17a2b8; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <strong style="font-size: 14px; color: #2c3e50;">Data: ${item.date || 'N/A'}</strong>
+                                <strong style="font-size: 14px; color: #2c3e50;">Data: ${item.date || 'N/A'} (R$ ${item.valorHora || 38.63}/h)</strong>
                                 <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold;">R$ ${item.totalValue || '0.00'}</span>
                             </div>
                             <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Duração:</strong> ${item.totalHoursText || '0h'} (${item.totalHours || 0}h)</p>
@@ -219,7 +219,6 @@
             let somaValorTotal = 0;
 
             itensDoMes.forEach(item => {
-                // Formatar período
                 let periodoStr = "N/A";
                 if (item.start && item.end) {
                     const hInicio = new Date(item.start).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
@@ -248,12 +247,10 @@
                 "Valor Total (R$)": somaValorTotal
             });
 
-            // Criar a worksheet e o workbook usando SheetJS
             const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Horas Extras");
 
-            // Ajustar largura automática das colunas para melhor visualização
             const wscols = [
                 {wch: 15}, // Dia / Data
                 {wch: 22}, // Período / Horário
@@ -263,48 +260,50 @@
             ];
             worksheet['!cols'] = wscols;
 
-            // Descarregar o ficheiro .xlsx
             XLSX.writeFile(workbook, `Relatorio_Horas_Extras_${mesSel}_${anoSel}.xlsx`);
         });
 
-        // Botão para importar automaticamente a lista para testes
+        // Botão para importar automaticamente os 13 dias com o valor 38.63
         document.getElementById('btn-importar-lote').addEventListener('click', async () => {
-            if (!confirm("Deseja importar automaticamente os 13 registos de horas extras para o sistema?")) return;
+            if (!confirm("Deseja importar automaticamente os 13 registos considerando o valor de R$ 38,63/h?")) return;
 
             const anoMesBase = document.getElementById('rel-mes-ano').value || `${anoAtual}-${mesAtual}`;
+            const valorHoraLote = 38.63;
             
             const listaParaImportar = [
-                { dia: "01", startH: "21:00", endH: "00:30", motivo: "Stream 9.5", horasTxt: "3h 30m", val: "700.00", dec: 3.5 },
-                { dia: "04", startH: "13:00", endH: "17:00", motivo: "Florense e Sec. Tecmatic", horasTxt: "4h 0m", val: "800.00", dec: 4.0 },
-                { dia: "05", startH: "07:00", endH: "11:30", motivo: "Esquadra 1", horasTxt: "4h 30m", val: "900.00", dec: 4.5 },
-                { dia: "08", startH: "07:00", endH: "16:00", motivo: "HOZMA (Feriado - com intervalo)", horasTxt: "17h 30m", val: "3500.00", dec: 17.5 },
-                { dia: "14", startH: "17:30", endH: "19:30", motivo: "Coladeira IMAI (comando cascata)", horasTxt: "2h 0m", val: "400.00", dec: 2.0 },
-                { dia: "17", startH: "17:30", endH: "18:30", motivo: "Pane elétrica na HOZMA", horasTxt: "1h 0m", val: "200.00", dec: 1.0 },
-                { dia: "18", startH: "13:30", endH: "17:00", motivo: "Esquadra 2", horasTxt: "3h 30m", val: "700.00", dec: 3.5 },
-                { dia: "19", startH: "07:00", endH: "10:00", motivo: "Finalizar esquadra 2", horasTxt: "3h 0m", val: "600.00", dec: 3.0 },
-                { dia: "22", startH: "17:30", endH: "19:30", motivo: "Rover", horasTxt: "2h 0m", val: "400.00", dec: 2.0 },
-                { dia: "23", startH: "17:30", endH: "20:00", motivo: "Forno L1", horasTxt: "2h 30m", val: "500.00", dec: 2.5 },
-                { dia: "25", startH: "13:30", endH: "18:00", motivo: "Rover", horasTxt: "4h 30m", val: "900.00", dec: 4.5 },
-                { dia: "27", startH: "07:00", endH: "17:30", motivo: "Rover (Domingo - com intervalo)", horasTxt: "19h 0m", val: "3800.00", dec: 19.0 },
-                { dia: "28", startH: "17:30", endH: "20:00", motivo: "Esquadra Florense", horasTxt: "2h 30m", val: "500.00", dec: 2.5 }
+                { dia: "01", startH: "21:00", endH: "00:30", motivo: "Stream 9.5", horasTxt: "3h 30m", dec: 3.5 },
+                { dia: "04", startH: "13:00", endH: "17:00", motivo: "Florense e Sec. Tecmatic", horasTxt: "4h 0m", dec: 4.0 },
+                { dia: "05", startH: "07:00", endH: "11:30", motivo: "Esquadra 1", horasTxt: "4h 30m", dec: 4.5 },
+                { dia: "08", startH: "07:00", endH: "16:00", motivo: "HOZMA (Feriado - com intervalo)", horasTxt: "17h 30m", dec: 17.5 },
+                { dia: "14", startH: "17:30", endH: "19:30", motivo: "Coladeira IMAI (comando cascata)", horasTxt: "2h 0m", dec: 2.0 },
+                { dia: "17", startH: "17:30", endH: "18:30", motivo: "Pane elétrica na HOZMA", horasTxt: "1h 0m", dec: 1.0 },
+                { dia: "18", startH: "13:30", endH: "17:00", motivo: "Esquadra 2", horasTxt: "3h 30m", dec: 3.5 },
+                { dia: "19", startH: "07:00", endH: "10:00", motivo: "Finalizar esquadra 2", horasTxt: "3h 0m", dec: 3.0 },
+                { dia: "22", startH: "17:30", endH: "19:30", motivo: "Rover", horasTxt: "2h 0m", dec: 2.0 },
+                { dia: "23", startH: "17:30", endH: "20:00", motivo: "Forno L1", horasTxt: "2h 30m", dec: 2.5 },
+                { dia: "25", startH: "13:30", endH: "18:00", motivo: "Rover", horasTxt: "4h 30m", dec: 4.5 },
+                { dia: "27", startH: "07:00", endH: "17:30", motivo: "Rover (Domingo - com intervalo)", horasTxt: "19h 0m", dec: 19.0 },
+                { dia: "28", startH: "17:30", endH: "20:00", motivo: "Esquadra Florense", horasTxt: "2h 30m", dec: 2.5 }
             ];
 
             try {
                 for (let item of listaParaImportar) {
                     const dataCompleta = `${anoMesBase}-${item.dia}`;
+                    const valorTotalCalc = (item.dec * valorHoraLote).toFixed(2);
+
                     await addDoc(collection(db, "horas_extras"), {
                         date: dataCompleta,
-                        valorHora: 200.00,
+                        valorHora: valorHoraLote,
                         start: `${dataCompleta}T${item.startH}`,
                         end: `${dataCompleta}T${item.endH}`,
                         reason: item.motivo,
                         totalHours: String(item.dec),
                         totalHoursText: item.horasTxt,
-                        totalValue: item.val,
+                        totalValue: valorTotalCalc,
                         createdAt: new Date()
                     });
                 }
-                alert("Todos os 13 registos foram importados com sucesso!");
+                alert("Todos os 13 registos foram importados com sucesso a R$ 38,63/h!");
                 loadHorasExtras();
             } catch (err) {
                 console.error("Erro ao importar lote:", err);
@@ -327,9 +326,9 @@
         heForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const date = document.getElementById('he-date').value;
-            const valorHora = parseFloat(document.getElementById('he-valor-hora').value) || 200.00;
+            const valorHora = parseFloat(document.getElementById('he-valor-hora').value) || 38.63;
             const start = document.getElementById('he-start').value;
-            const end = document.getElementById('he-end'].value;
+            const end = document.getElementById('he-end').value;
             const reason = document.getElementById('he-reason').value;
 
             const diffMs = new Date(end) - new Date(start);
@@ -353,6 +352,7 @@
                 alert("Registo guardado com sucesso!");
                 heForm.reset();
                 document.getElementById('he-date').valueAsDate = new Date();
+                document.getElementById('he-valor-hora').value = valorHora;
                 loadHorasExtras();
             } catch (error) {
                 alert("Erro ao guardar.");
