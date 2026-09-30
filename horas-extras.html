@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <link rel="icon" href="img/ico1.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registo de Horas Extras - RG Soluções Técnicas</title>
+    <link rel="stylesheet" href="css/style.css?v=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <!-- Biblioteca jsPDF para gerar o relatório se necessário -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Menu Lateral (Sidebar) -->
+        <aside class="sidebar">
+            <div style="text-align: center; margin-bottom: 20px; padding: 10px;">
+                <img src="img/logo.png" alt="RG Soluções Técnicas" style="max-width: 100%; height: auto; border-radius: 4px;">
+            </div>
+            <nav>
+                <a href="index.html">🏠 Início / Histórico</a>
+                <a href="clientes.html">👥 Gestão de Clientes</a>
+                <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
+                <a href="horas-extras.html" class="active">⏱️ Horas Extras</a>
+                <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
+                
+                <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
+                    Powered by CS Code Solutions
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <button class="menu-toggle" id="menuToggle">☰ Menu</button>
+
+            <div class="container" style="max-width: 800px;">
+                <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
+                
+                <h2>Registo de Horas Extras</h2>
+
+                <!-- Formulário de Registo -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd;">
+                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Novo Registo</h3>
+                    
+                    <form id="he-form">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Data:</label>
+                                <input type="date" id="he-date" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Valor da Hora (R$):</label>
+                                <input type="number" step="0.01" id="he-valor-hora" value="200.00" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                            <div style="flex: 1; min-width: 180px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Hora Início:</label>
+                                <input type="datetime-local" id="he-start" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1; min-width: 180px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Hora Fim:</label>
+                                <input type="datetime-local" id="he-end" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Motivo / Descrição:</label>
+                            <textarea id="he-reason" rows="3" required placeholder="Ex: Suporte técnico fora do horário comercial em equipamento crítico" style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
+                        </div>
+
+                        <button type="submit" id="btn-submit-he" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%;">Guardar Hora Extra</button>
+                    </form>
+                </div>
+
+                <!-- Lista de Registos -->
+                <div style="margin-top: 30px;">
+                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Histórico de Horas Extras</h3>
+                    <div id="he-list">
+                        <p style="color: #666; text-align: center;">A carregar registos...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Registo do Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => console.log("Erro SW:", err));
+            });
+        }
+    </script>
+
+    <!-- Script Principal -->
+    <script type="module">
+        import { db, auth } from './js/firebase-config.js';
+        import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        let authChecked = false;
+        onAuthStateChanged(auth, (user) => {
+            authChecked = true;
+            if (!user) window.location.href = 'login.html';
+        });
+
+        setTimeout(() => {
+            if (!authChecked && !auth.currentUser) window.location.href = 'login.html';
+        }, 2000);
+
+        // Menu Mobile
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('active');
+            });
+            document.addEventListener('click', (event) => {
+                if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                    sidebar.classList.remove('active');
+                }
+            });
+        }
+
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'login.html';
+        });
+
+        // Preencher data atual por defeito no input de data
+        document.getElementById('he-date').valueAsDate = new Date();
+
+        const heForm = document.getElementById('he-form');
+        const heListDiv =chno = document.getElementById('he-list');
+
+        async function loadHorasExtras() {
+            try {
+                const q = query(collection(db, "horas_extras"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                const listDiv = document.getElementById('he-list');
+                listDiv.innerHTML = "";
+                
+                if (querySnapshot.empty) {
+                    listDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum registo de hora extra encontrado.</p>";
+                    return;
+                }
+
+                let html = "";
+                querySnapshot.forEach((docSnap) => {
+                    const item = docSnap.data();
+                    const id = docSnap.id;
+
+                    const inicioFmt = new Date(item.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                    const fimFmt = new Date(item.end).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+                    html += `
+                        <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #17a2b8; padding: 15px; border-radius: 6px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <strong style="font-size: 15px; color: #2c3e50;">Data: ${item.date || 'N/A'}</strong>
+                                <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 13px; font-weight: bold;">R$ ${item.totalValue || '0.00'}</span>
+                            </div>
+                            <p style="margin: 6px 0; font-size: 13px; color: #555;"><strong>Período:</strong> ${inicioFmt} até ${fimFmt} (${item.totalHoursText || '0h'})</p>
+                            <p style="margin: 6px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><strong>Motivo:</strong> "${item.reason || 'Sem motivo'}"</p>
+                            <div style="margin-top: 10px; text-align: right;">
+                                <button type="button" onclick="excluirHE('${id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🗑️ Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                listDiv.innerHTML = html;
+            } catch (error) {
+                console.error("Erro ao carregar horas extras:", error);
+                document.getElementById('he-list').innerHTML = "<p style='color: red;'>Erro ao carregar os dados.</p>";
+            }
+        }
+
+        window.excluirHE = async function(id) {
+            if (confirm("Tem a certeza de que pretende eliminar este registo?")) {
+                try {
+                    await deleteDoc(doc(db, "horas_extras", id));
+                    alert("Registo eliminado com sucesso!");
+                    loadHorasExtras();
+                } catch (error) {
+                    console.error("Erro ao eliminar:", error);
+                    alert("Erro ao eliminar o registo.");
+                }
+            }
+        };
+
+        heForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const date = document.getElementById('he-date').value;
+            const valorHora = parseFloat(document.getElementById('he-valor-hora').value) || 200.00;
+            const start = document.getElementById('he-start').value;
+            const end = document.getElementById('he-end').value;
+            const reason = document.getElementById('he-reason').value;
+
+            // Cálculo das horas
+            const diffMs = new Date(end) - new Date(start);
+            if (diffMs <= 0) {
+                alert("A hora de fim deve ser posterior à hora de início!");
+                return;
+            }
+
+            const minutosTotais = diffMs / (1000 * 60);
+            const horasDecimais = minutosTotais / 60;
+            const valorTotal = (horasDecimais * valorHora).toFixed(2);
+            
+            const horasExatas = Math.floor(minutosTotais / 60);
+            const minutosRestantes = Math.round(minutosTotais % 60);
+            const totalHoursText = `${horasExatas}h ${minutosRestantes}m`;
+
+            try {
+                await addDoc(collection(db, "horas_extras"), {
+                    date,
+                    valorHora,
+                    start,
+                    end,
+                    reason,
+                    totalHours: horasDecimais.toFixed(2),
+                    totalHoursText,
+                    totalValue: valorTotal,
+                    createdAt: new Date()
+                });
+
+                alert("Hora extra registada com sucesso!");
+                heForm.reset();
+                document.getElementById('he-date').valueAsDate = new Date();
+                document.getElementById('he-valor-hora').value = valorHora;
+                loadHorasExtras();
+            } catch (error) {
+                console.error("Erro ao guardar:", error);
+                alert("Ocorreu um erro ao guardar o registo.");
+            }
+        });
+
+        loadHorasExtras();
+    </script>
+</body>
+</html>
