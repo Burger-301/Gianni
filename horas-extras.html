@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.7">
+    <link rel="stylesheet" href="css/style.css?v=1.8">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
@@ -104,7 +104,7 @@
 
     <!-- Script Principal -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.7';
+        import { db, auth } from './js/firebase-config.js?v=1.8';
         import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -154,6 +154,15 @@
 
         let allHE = [];
 
+        // Função auxiliar para formatar a data/hora para o formato dd/mm/aaaa HH:MM
+        function formatDateTimeBR(isoString) {
+            if (!isoString) return 'N/A';
+            const [datePart, timePart] = isoString.split('T');
+            if (!datePart || !timePart) return isoString;
+            const [ano, mes, dia] = datePart.split('-');
+            return `${dia}/${mes}/${ano} ${timePart}`;
+        }
+
         async function loadHorasExtras() {
             try {
                 const q = query(collection(db, "horas_extras"), orderBy("date", "desc"));
@@ -174,12 +183,17 @@
 
                 let html = "";
                 allHE.forEach((item) => {
+                    const inicioFormatado = formatDateTimeBR(item.start);
+                    const fimFormatado = formatDateTimeBR(item.end);
+
                     html += `
                         <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #17a2b8; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <strong style="font-size: 14px; color: #2c3e50;">Data: ${item.date || 'N/A'} (R$ ${item.valorHora || 38.63}/h)</strong>
+                                <strong style="font-size: 14px; color: #2c3e50;">Data do Registo: ${item.date || 'N/A'} (R$ ${item.valorHora || 38.63}/h)</strong>
                                 <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold;">R$ ${item.totalValue || '0.00'}</span>
                             </div>
+                            <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Início:</strong> ${inicioFormatado}</p>
+                            <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Fim:</strong> ${fimFormatado}</p>
                             <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Duração:</strong> ${item.totalHoursText || '0h'} (${item.totalHours || 0}h)</p>
                             <p style="margin: 4px 0; font-size: 13px; color: #666;"><strong>Motivo:</strong> ${item.reason || 'Sem motivo'}</p>
                             <div style="margin-top: 8px; text-align: right;">
@@ -223,8 +237,8 @@
             itensDoMes.forEach(item => {
                 let periodoStr = "N/A";
                 if (item.start && item.end) {
-                    const hInicio = new Date(item.start).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                    const hFim = new Date(item.end).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    const hInicio = formatDateTimeBR(item.start);
+                    const hFim = formatDateTimeBR(item.end);
                     periodoStr = `${hInicio} às ${hFim}`;
                 }
 
@@ -253,7 +267,7 @@
             XLSX.utils.book_append_sheet(workbook, worksheet, "Horas Extras");
 
             const wscols = [
-                {wch: 15}, {wch: 22}, {wch: 35}, {wch: 15}, {wch: 18}
+                {wch: 15}, {wch: 32}, {wch: 35}, {wch: 15}, {wch: 18}
             ];
             worksheet['!cols'] = wscols;
 
