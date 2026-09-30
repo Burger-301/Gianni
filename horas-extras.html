@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.0">
+    <link rel="stylesheet" href="css/style.css?v=1.1">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
-    <!-- Biblioteca jsPDF para gerar o relatório se necessário -->
+    <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -47,7 +47,7 @@
                     <form id="he-form">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
                             <div style="flex: 1; min-width: 150px;">
-                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Data:</label>
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Data (Automática):</label>
                                 <input type="date" id="he-date" required style="width: 100%; padding: 8px; box-sizing: border-box;">
                             </div>
                             <div style="flex: 1; min-width: 150px;">
@@ -133,30 +133,32 @@
             window.location.href = 'login.html';
         });
 
-        // Preencher data atual por defeito no input de data
+        // Puxar data atual automaticamente por defeito
         document.getElementById('he-date').valueAsDate = new Date();
 
         const heForm = document.getElementById('he-form');
-        const heListDiv =chno = document.getElementById('he-list');
+        let allHE = [];
 
         async function loadHorasExtras() {
             try {
                 const q = query(collection(db, "horas_extras"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 
+                allHE = [];
+                querySnapshot.forEach((docSnap) => {
+                    allHE.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
                 const listDiv = document.getElementById('he-list');
                 listDiv.innerHTML = "";
                 
-                if (querySnapshot.empty) {
+                if (allHE.length === 0) {
                     listDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum registo de hora extra encontrado.</p>";
                     return;
                 }
 
                 let html = "";
-                querySnapshot.forEach((docSnap) => {
-                    const item = docSnap.data();
-                    const id = docSnap.id;
-
+                allHE.forEach((item) => {
                     const inicioFmt = new Date(item.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
                     const fimFmt = new Date(item.end).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -168,8 +170,10 @@
                             </div>
                             <p style="margin: 6px 0; font-size: 13px; color: #555;"><strong>Período:</strong> ${inicioFmt} até ${fimFmt} (${item.totalHoursText || '0h'})</p>
                             <p style="margin: 6px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><strong>Motivo:</strong> "${item.reason || 'Sem motivo'}"</p>
-                            <div style="margin-top: 10px; text-align: right;">
-                                <button type="button" onclick="excluirHE('${id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🗑️ Excluir</button>
+                            
+                            <div style="margin-top: 10px; display: flex; gap: 8px;">
+                                <button type="button" onclick="gerarRelatorioHEPDF('${item.id}')" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; flex: 1;">📄 Gerar Relatório PDF</button>
+                                <button type="button" onclick="excluirHE('${item.id}')" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🗑️️ Excluir</button>
                             </div>
                         </div>
                     `;
@@ -181,6 +185,155 @@
             }
         }
 
+        // Função para converter imagem em Base64 para o PDF
+        function getBase64ImageFromUrl(url) {
+            return new Promise((resolve) => {
+                if (!url) { resolve(null); return; }
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg'));
+                    } catch (e) { resolve(null); }
+                };
+                img.onerror = function() { resolve(null); };
+                img.src = url;
+            });
+        }
+
+        // Gerador de Relatório PDF para o Gestor
+        window.gerarRelatorioHEPDF = async function(id) {
+            try {
+                const item = allHE.find(h => h.id === id);
+                if (!item) { alert("Registo não encontrado!"); return; }
+
+                const { jsPDF } = window.jspdf;
+                const docPDF = new jsPDF();
+
+                const empresa = {
+                    nome: "RG Soluções Técnicas",
+                    razaoSocial: "RG SOLUCOES TECNICAS LTDA",
+                    email: "gcrodeghiero@gmail.com",
+                    cnpj: "54.875.741/0001-45"
+                };
+
+                const dataEmissao = new Date().toLocaleDateString('pt-BR');
+                const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
+                if (logoBase64) {
+                    docPDF.addImage(logoBase64, 'PNG', 20, 6, 26, 11);
+                }
+
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(11);
+                docPDF.text("Relatório de Horas Extras", 50, 10);
+                
+                docPDF.setFontSize(9.5);
+                docPDF.setTextColor(0, 123, 255);
+                docPDF.text(`Data Registo: ${item.date || dataEmissao}`, 140, 10);
+
+                docPDF.setTextColor(0, 0, 0);
+                docPDF.setFontSize(7.5);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`Emitido em: ${dataEmissao}`, 140, 14.5);
+
+                docPDF.setLineWidth(0.3);
+                docPDF.line(20, 18, 190, 18);
+
+                let y = 25;
+
+                function desenharSecao(titulo) {
+                    y += 8;
+                    docPDF.setFillColor(230, 235, 245);
+                    docPDF.rect(20, y, 170, 5, 'F');
+                    docPDF.setFont("helvetica", "bold");
+                    docPDF.setFontSize(8.5);
+                    docPDF.setTextColor(40, 40, 40);
+                    docPDF.text(titulo, 22, y + 3.5);
+                    y += 8;
+                }
+
+                // 1. Dados da Empresa / Técnico
+                desenharSecao("Informações do Prestador");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                docPDF.text(`Nome: ${empresa.nome}`, 22, y);
+                docPDF.text(`CNPJ: ${empresa.cnpj}`, 102, y);
+                y += 5;
+                docPDF.text(`E-mail: ${empresa.email}`, 22, y);
+
+                // 2. Detalhes das Horas Extras
+                desenharSecao("Detalhes do Período Trabalhado");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                const inicioFmt = new Date(item.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                const fimFmt = new Date(item.end).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                
+                docPDF.text(`• Início: ${inicioFmt}`, 22, y);
+                y += 5;
+                docPDF.text(`• Fim: ${fimFmt}`, 22, y);
+                y += 5;
+                docPDF.text(`• Total de Horas: ${item.totalHoursText || '0h'} (${item.totalHours || 0} horas decimais)`, 22, y);
+
+                // 3. Motivo
+                desenharSecao("Motivo / Justificativa");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                const splitMotivo = docPDF.splitTextToSize(item.reason || 'Sem motivo descrito', 165);
+                docPDF.text(splitMotivo, 22, y);
+                y += (splitMotivo.length * 4) + 4;
+
+                // 4. Valores e Cálculo
+                desenharSecao("Demonstrativo de Valores");
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(8);
+                docPDF.text(`• Valor da Hora Extra: R$ ${Number(item.valorHora || 200).toFixed(2)}`, 22, y);
+                y += 5;
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text(`• VALOR TOTAL A RECEBER: R$ ${item.totalValue || '0.00'}`, 22, y);
+
+                // Assinatura
+                let sigY = y + 35;
+                docPDF.setLineWidth(0.2);
+                docPDF.line(55, sigY, 155, sigY);
+                docPDF.setFontSize(7);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text("Assinatura do Técnico / Responsável", 82, sigY + 4);
+
+                const pdfBlob = docPDF.output('blob');
+                const fileName = `Relatorio_HoraExtra_${item.date || 'registo'}.pdf`;
+                const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Relatório de Hora Extra',
+                            text: `Segue o relatório de hora extra referente ao dia ${item.date}.`,
+                            files: [pdfFile],
+                        });
+                        return;
+                    } catch (error) { if (error.name === 'AbortError') return; }
+                }
+
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pdfUrl;
+                downloadLink.download = fileName;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                alert("Relatório PDF gerado com sucesso!");
+
+            } catch (error) {
+                console.error("Erro ao gerar PDF:", error);
+                alert("Ocorreu um erro ao gerar o relatório PDF.");
+            }
+        };
+
         window.excluirHE = async function(id) {
             if (confirm("Tem a certeza de que pretende eliminar este registo?")) {
                 try {
@@ -188,7 +341,6 @@
                     alert("Registo eliminado com sucesso!");
                     loadHorasExtras();
                 } catch (error) {
-                    console.error("Erro ao eliminar:", error);
                     alert("Erro ao eliminar o registo.");
                 }
             }
@@ -203,7 +355,6 @@
             const end = document.getElementById('he-end').value;
             const reason = document.getElementById('he-reason').value;
 
-            // Cálculo das horas
             const diffMs = new Date(end) - new Date(start);
             if (diffMs <= 0) {
                 alert("A hora de fim deve ser posterior à hora de início!");
@@ -237,7 +388,6 @@
                 document.getElementById('he-valor-hora').value = valorHora;
                 loadHorasExtras();
             } catch (error) {
-                console.error("Erro ao guardar:", error);
                 alert("Ocorreu um erro ao guardar o registo.");
             }
         });
