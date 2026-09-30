@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <link rel="stylesheet" href="css/style.css?v=1.2">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
@@ -40,14 +40,34 @@
                 
                 <h2>Registo de Horas Extras</h2>
 
-                <!-- Formulário de Registo -->
+                <!-- Painel de Relatório Mensal e Importação Automática -->
+                <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ced4da; display: flex; flex-direction: column; gap: 12px;">
+                    <h3 style="margin: 0; color: #2c3e50; font-size: 15px;">📊 Relatório Consolidado do Mês</h3>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; font-weight: bold; font-size: 12px; margin-bottom: 3px;">Selecione o Mês/Ano:</label>
+                            <input type="month" id="rel-mes-ano" style="width: 100%; padding: 6px; box-sizing: border-box; font-size: 13px;">
+                        </div>
+                        <div>
+                            <button type="button" id="btn-gerar-relatorio-mes" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">📄 Gerar Relatório do Mês PDF</button>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <span style="font-size: 12px; color: #555;">Carregar automaticamente a lista enviada para testes:</span>
+                        <button type="button" id="btn-importar-lote" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">⚡ Importar Dados do Mês Automaticamente</button>
+                    </div>
+                </div>
+
+                <!-- Formulário de Registo Manual -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Novo Registo</h3>
+                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Registo Manual</h3>
                     
                     <form id="he-form">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
                             <div style="flex: 1; min-width: 150px;">
-                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Data (Automática):</label>
+                                <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Data:</label>
                                 <input type="date" id="he-date" required style="width: 100%; padding: 8px; box-sizing: border-box;">
                             </div>
                             <div style="flex: 1; min-width: 150px;">
@@ -69,7 +89,7 @@
 
                         <div style="margin-bottom: 15px;">
                             <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;">Motivo / Descrição:</label>
-                            <textarea id="he-reason" rows="3" required placeholder="Ex: Suporte técnico fora do horário comercial em equipamento crítico" style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
+                            <textarea id="he-reason" rows="3" required placeholder="Ex: Suporte técnico..." style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
                         </div>
 
                         <button type="submit" id="btn-submit-he" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%;">Guardar Hora Extra</button>
@@ -78,7 +98,7 @@
 
                 <!-- Lista de Registos -->
                 <div style="margin-top: 30px;">
-                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Histórico de Horas Extras</h3>
+                    <h3 style="color: #2c3e50; font-size: 18px; margin-bottom: 15px;">Histórico de Registos</h3>
                     <div id="he-list">
                         <p style="color: #666; text-align: center;">A carregar registos...</p>
                     </div>
@@ -86,15 +106,6 @@
             </div>
         </main>
     </div>
-
-    <!-- Registo do Service Worker para PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch((err) => console.log("Erro SW:", err));
-            });
-        }
-    </script>
 
     <!-- Script Principal -->
     <script type="module">
@@ -133,15 +144,18 @@
             window.location.href = 'login.html';
         });
 
-        // Puxar data atual automaticamente por defeito
-        document.getElementById('he-date').valueAsDate = new Date();
+        // Preencher data atual e input de mês atual por defeito
+        const hoje = new Date();
+        document.getElementById('he-date').valueAsDate = hoje;
+        const anoAtual = hoje.getFullYear();
+        const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+        document.getElementById('rel-mes-ano').value = `${anoAtual}-${mesAtual}`;
 
-        const heForm = document.getElementById('he-form');
         let allHE = [];
 
         async function loadHorasExtras() {
             try {
-                const q = query(collection(db, "horas_extras"), orderBy("createdAt", "desc"));
+                const q = query(collection(db, "horas_extras"), orderBy("date", "desc"));
                 const querySnapshot = await getDocs(q);
                 
                 allHE = [];
@@ -153,35 +167,29 @@
                 listDiv.innerHTML = "";
                 
                 if (allHE.length === 0) {
-                    listDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum registo de hora extra encontrado.</p>";
+                    listDiv.innerHTML = "<p style='color: #666; text-align: center; padding: 15px;'>Nenhum registo encontrado.</p>";
                     return;
                 }
 
                 let html = "";
                 allHE.forEach((item) => {
-                    const inicioFmt = new Date(item.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-                    const fimFmt = new Date(item.end).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-
                     html += `
-                        <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #17a2b8; padding: 15px; border-radius: 6px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #17a2b8; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <strong style="font-size: 15px; color: #2c3e50;">Data: ${item.date || 'N/A'}</strong>
-                                <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 13px; font-weight: bold;">R$ ${item.totalValue || '0.00'}</span>
+                                <strong style="font-size: 14px; color: #2c3e50;">Data: ${item.date || 'N/A'}</strong>
+                                <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold;">R$ ${item.totalValue || '0.00'}</span>
                             </div>
-                            <p style="margin: 6px 0; font-size: 13px; color: #555;"><strong>Período:</strong> ${inicioFmt} até ${fimFmt} (${item.totalHoursText || '0h'})</p>
-                            <p style="margin: 6px 0; font-size: 13px; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px;"><strong>Motivo:</strong> "${item.reason || 'Sem motivo'}"</p>
-                            
-                            <div style="margin-top: 10px; display: flex; gap: 8px;">
-                                <button type="button" onclick="gerarRelatorioHEPDF('${item.id}')" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; flex: 1;">📄 Gerar Relatório PDF</button>
-                                <button type="button" onclick="excluirHE('${item.id}')" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">🗑️️ Excluir</button>
+                            <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Duração:</strong> ${item.totalHoursText || '0h'} (${item.totalHours || 0}h)</p>
+                            <p style="margin: 4px 0; font-size: 13px; color: #666;"><strong>Motivo:</strong> ${item.reason || 'Sem motivo'}</p>
+                            <div style="margin-top: 8px; text-align: right;">
+                                <button type="button" onclick="excluirHE('${item.id}')" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">🗑 Excluir</button>
                             </div>
                         </div>
                     `;
                 });
                 listDiv.innerHTML = html;
             } catch (error) {
-                console.error("Erro ao carregar horas extras:", error);
-                document.getElementById('he-list').innerHTML = "<p style='color: red;'>Erro ao carregar os dados.</p>";
+                console.error("Erro ao carregar:", error);
             }
         }
 
@@ -194,8 +202,7 @@
                 img.onload = function() {
                     try {
                         const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
+                        canvas.width = img.width; canvas.height = img.height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0);
                         resolve(canvas.toDataURL('image/jpeg'));
@@ -206,12 +213,28 @@
             });
         }
 
-        // Gerador de Relatório PDF para o Gestor
-        window.gerarRelatorioHEPDF = async function(id) {
-            try {
-                const item = allHE.find(h => h.id === id);
-                if (!item) { alert("Registo não encontrado!"); return; }
+        // Gerar Relatório Consolidado do Mês Selecionado
+        document.getElementById('btn-gerar-relatorio-mes').addEventListener('click', async () => {
+            const mesAnoValor = document.getElementById('rel-mes-ano').value; // Formato "YYYY-MM"
+            if (!mesAnoValor) {
+                alert("Por favor, selecione o mês e o ano!");
+                return;
+            }
 
+            const [anoSel, mesSel] = mesAnoValor.split('-');
+            
+            // Filtrar registos do mês selecionado
+            const itensDoMes = allHE.filter(item => {
+                if (!item.date) return false;
+                return item.date.startsWith(`${anoSel}-${mesSel}`);
+            });
+
+            if (itensDoMes.length === 0) {
+                alert(`Não existem registos de horas extras para o mês ${mesSel}/${anoSel}!`);
+                return;
+            }
+
+            try {
                 const { jsPDF } = window.jspdf;
                 const docPDF = new jsPDF();
 
@@ -230,89 +253,101 @@
 
                 docPDF.setFont("helvetica", "bold");
                 docPDF.setFontSize(11);
-                docPDF.text("Relatório de Horas Extras", 50, 10);
+                docPDF.text(`Relatório Consolidado de Horas Extras - ${mesSel}/${anoSel}`, 48, 10);
                 
-                docPDF.setFontSize(9.5);
+                docPDF.setFontSize(8);
                 docPDF.setTextColor(0, 123, 255);
-                docPDF.text(`Data Registo: ${item.date || dataEmissao}`, 140, 10);
-
-                docPDF.setTextColor(0, 0, 0);
-                docPDF.setFontSize(7.5);
-                docPDF.setFont("helvetica", "normal");
-                docPDF.text(`Emitido em: ${dataEmissao}`, 140, 14.5);
+                docPDF.text(`Emitido em: ${dataEmissao}`, 145, 10);
 
                 docPDF.setLineWidth(0.3);
-                docPDF.line(20, 18, 190, 18);
+                docPDF.line(20, 16, 190, 16);
 
-                let y = 25;
+                let y = 22;
 
-                function desenharSecao(titulo) {
-                    y += 8;
-                    docPDF.setFillColor(230, 235, 245);
-                    docPDF.rect(20, y, 170, 5, 'F');
-                    docPDF.setFont("helvetica", "bold");
-                    docPDF.setFontSize(8.5);
-                    docPDF.setTextColor(40, 40, 40);
-                    docPDF.text(titulo, 22, y + 3.5);
-                    y += 8;
-                }
-
-                // 1. Dados da Empresa / Técnico
-                desenharSecao("Informações do Prestador");
-                docPDF.setFont("helvetica", "normal");
-                docPDF.setFontSize(8);
-                docPDF.text(`Nome: ${empresa.nome}`, 22, y);
-                docPDF.text(`CNPJ: ${empresa.cnpj}`, 102, y);
-                y += 5;
-                docPDF.text(`E-mail: ${empresa.email}`, 22, y);
-
-                // 2. Detalhes das Horas Extras
-                desenharSecao("Detalhes do Período Trabalhado");
-                docPDF.setFont("helvetica", "normal");
-                docPDF.setFontSize(8);
-                const inicioFmt = new Date(item.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-                const fimFmt = new Date(item.end).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-                
-                docPDF.text(`• Início: ${inicioFmt}`, 22, y);
-                y += 5;
-                docPDF.text(`• Fim: ${fimFmt}`, 22, y);
-                y += 5;
-                docPDF.text(`• Total de Horas: ${item.totalHoursText || '0h'} (${item.totalHours || 0} horas decimais)`, 22, y);
-
-                // 3. Motivo
-                desenharSecao("Motivo / Justificativa");
-                docPDF.setFont("helvetica", "normal");
-                docPDF.setFontSize(8);
-                const splitMotivo = docPDF.splitTextToSize(item.reason || 'Sem motivo descrito', 165);
-                docPDF.text(splitMotivo, 22, y);
-                y += (splitMotivo.length * 4) + 4;
-
-                // 4. Valores e Cálculo
-                desenharSecao("Demonstrativo de Valores");
-                docPDF.setFont("helvetica", "normal");
-                docPDF.setFontSize(8);
-                docPDF.text(`• Valor da Hora Extra: R$ ${Number(item.valorHora || 200).toFixed(2)}`, 22, y);
-                y += 5;
+                // Informações da empresa
                 docPDF.setFont("helvetica", "bold");
-                docPDF.text(`• VALOR TOTAL A RECEBER: R$ ${item.totalValue || '0.00'}`, 22, y);
+                docPDF.setFontSize(8.5);
+                docPDF.setTextColor(40, 40, 40);
+                docPDF.text("Prestador:", 20, y);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`${empresa.nome} (CNPJ: ${empresa.cnpj})`, 40, y);
+                y += 5;
+
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("Período:", 20, y);
+                docPDF.setFont("helvetica", "normal");
+                docPDF.text(`Mês de Referência: ${mesSel}/${anoSel}`, 40, y);
+                y += 10;
+
+                // Cabeçalho da Tabela
+                docPDF.setFillColor(230, 235, 245);
+                docPDF.rect(20, y, 170, 6, 'F');
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(8);
+                docPDF.text("Data", 22, y + 4);
+                docPDF.text("Duração", 52, y + 4);
+                docPDF.text("Valor Total", 82, y + 4);
+                docPDF.text("Motivo / Descrição", 112, y + 4);
+                y += 8;
+
+                let somaHorasDecimais = 0;
+                let somaValorTotal = 0;
+
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(7.5);
+
+                itensDoMes.forEach(item => {
+                    if (y > 270) {
+                        docPDF.addPage();
+                        y = 20;
+                    }
+
+                    const valH = parseFloat(item.totalHours) || 0;
+                    const valV = parseFloat(item.totalValue) || 0;
+                    somaHorasDecimais += valH;
+                    somaValorTotal += valV;
+
+                    docPDF.text(String(item.date || '-'), 22, y);
+                    docPDF.text(String(item.totalHoursText || '-'), 52, y);
+                    docPDF.text(`R$ ${valV.toFixed(2)}`, 82, y);
+                    
+                    const motivoCurto = docPDF.splitTextToSize(String(item.reason || '-'), 75);
+                    docPDF.text(motivoCurto, 112, y);
+
+                    y += (motivoCurto.length * 4) + 2;
+                });
+
+                y += 5;
+                docPDF.setLineWidth(0.2);
+                docPDF.line(20, y, 190, y);
+                y += 6;
+
+                // Totais Gerais
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(9);
+                docPDF.text(`TOTAL GERAL DE HORAS: ${somaHorasDecimais.toFixed(2)}h`, 20, y);
+                y += 6;
+                docPDF.setTextColor(0, 128, 0);
+                docPDF.text(`VALOR TOTAL A RECEBER: R$ ${somaValorTotal.toFixed(2)}`, 20, y);
 
                 // Assinatura
-                let sigY = y + 35;
+                let sigY = y + 25;
                 docPDF.setLineWidth(0.2);
                 docPDF.line(55, sigY, 155, sigY);
                 docPDF.setFontSize(7);
+                docPDF.setTextColor(0, 0, 0);
                 docPDF.setFont("helvetica", "normal");
                 docPDF.text("Assinatura do Técnico / Responsável", 82, sigY + 4);
 
                 const pdfBlob = docPDF.output('blob');
-                const fileName = `Relatorio_HoraExtra_${item.date || 'registo'}.pdf`;
+                const fileName = `Relatorio_HorasExtras_${mesSel}_${anoSel}.pdf`;
                 const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
                 if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                     try {
                         await navigator.share({
-                            title: 'Relatório de Hora Extra',
-                            text: `Segue o relatório de hora extra referente ao dia ${item.date}.`,
+                            title: `Relatório de Horas Extras - ${mesSel}/${anoSel}`,
+                            text: `Segue o relatório consolidado de horas extras do mês ${mesSel}/${anoSel}.`,
                             files: [pdfFile],
                         });
                         return;
@@ -326,29 +361,74 @@
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
-                alert("Relatório PDF gerado com sucesso!");
+                alert("Relatório mensal gerado com sucesso!");
 
             } catch (error) {
                 console.error("Erro ao gerar PDF:", error);
-                alert("Ocorreu um erro ao gerar o relatório PDF.");
+                alert("Ocorreu um erro ao gerar o relatório mensal.");
             }
-        };
+        });
+
+        // Botão para importar automaticamente a lista que enviaste para testes
+        document.getElementById('btn-importar-lote').addEventListener('click', async () => {
+            if (!confirm("Deseja importar automaticamente os 13 registos de horas extras para o sistema?")) return;
+
+            // Dados correspondentes à lista enviada (assumindo o mês atual, ex: Setembro/Outubro de 2026 ou ajustável)
+            const anoMesBase = document.getElementById('rel-mes-ano').value || `${anoAtual}-${mesAtual}`;
+            
+            const listaParaImportar = [
+                { dia: "01", startH: "21:00", endH: "00:30", motivo: "Stream 9.5", horasTxt: "3h 30m", val: "700.00", dec: 3.5 },
+                { dia: "04", startH: "13:00", endH: "17:00", motivo: "Florense e Sec. Tecmatic", horasTxt: "4h 0m", val: "800.00", dec: 4.0 },
+                { dia: "05", startH: "07:00", endH: "11:30", motivo: "Esquadra 1", horasTxt: "4h 30m", val: "900.00", dec: 4.5 },
+                { dia: "08", startH: "07:00", endH: "16:00", motivo: "HOZMA (Feriado - com intervalo)", horasTxt: "17h 30m", val: "3500.00", dec: 17.5 },
+                { dia: "14", startH: "17:30", endH: "19:30", motivo: "Coladeira IMAI (comando cascata)", horasTxt: "2h 0m", val: "400.00", dec: 2.0 },
+                { dia: "17", startH: "17:30", endH: "18:30", motivo: "Pane elétrica na HOZMA", horasTxt: "1h 0m", val: "200.00", dec: 1.0 },
+                { dia: "18", startH: "13:30", endH: "17:00", motivo: "Esquadra 2", horasTxt: "3h 30m", val: "700.00", dec: 3.5 },
+                { dia: "19", startH: "07:00", endH: "10:00", motivo: "Finalizar esquadra 2", horasTxt: "3h 0m", val: "600.00", dec: 3.0 },
+                { dia: "22", startH: "17:30", endH: "19:30", motivo: "Rover", horasTxt: "2h 0m", val: "400.00", dec: 2.0 },
+                { dia: "23", startH: "17:30", endH: "20:00", motivo: "Forno L1", horasTxt: "2h 30m", val: "500.00", dec: 2.5 },
+                { dia: "25", startH: "13:30", endH: "18:00", motivo: "Rover", horasTxt: "4h 30m", val: "900.00", dec: 4.5 },
+                { dia: "27", startH: "07:00", endH: "17:30", motivo: "Rover (Domingo - com intervalo)", horasTxt: "19h 0m", val: "3800.00", dec: 19.0 },
+                { dia: "28", startH: "17:30", endH: "20:00", motivo: "Esquadra Florense", horasTxt: "2h 30m", val: "500.00", dec: 2.5 }
+            ];
+
+            try {
+                for (let item of listaParaImportar) {
+                    const dataCompleta = `${anoMesBase}-${item.dia}`;
+                    await addDoc(collection(db, "horas_extras"), {
+                        date: dataCompleta,
+                        valorHora: 200.00,
+                        start: `${dataCompleta}T${item.startH}`,
+                        end: `${dataCompleta}T${item.endH}`,
+                        reason: item.motivo,
+                        totalHours: String(item.dec),
+                        totalHoursText: item.horasTxt,
+                        totalValue: item.val,
+                        createdAt: new Date()
+                    });
+                }
+                alert("Todos os 13 registos foram importados com sucesso!");
+                loadHorasExtras();
+            } catch (err) {
+                console.error("Erro ao importar lote:", err);
+                alert("Erro ao importar os dados automaticamente.");
+            }
+        });
 
         window.excluirHE = async function(id) {
             if (confirm("Tem a certeza de que pretende eliminar este registo?")) {
                 try {
                     await deleteDoc(doc(db, "horas_extras", id));
-                    alert("Registo eliminado com sucesso!");
                     loadHorasExtras();
                 } catch (error) {
-                    alert("Erro ao eliminar o registo.");
+                    alert("Erro ao eliminar.");
                 }
             }
         };
 
+        // Submeter formulário manual
         heForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const date = document.getElementById('he-date').value;
             const valorHora = parseFloat(document.getElementById('he-valor-hora').value) || 200.00;
             const start = document.getElementById('he-start').value;
@@ -356,39 +436,29 @@
             const reason = document.getElementById('he-reason').value;
 
             const diffMs = new Date(end) - new Date(start);
-            if (diffMs <= 0) {
-                alert("A hora de fim deve ser posterior à hora de início!");
-                return;
-            }
+            if (diffMs <= 0) { alert("A hora de fim deve ser posterior à de início!"); return; }
 
             const minutosTotais = diffMs / (1000 * 60);
             const horasDecimais = minutosTotais / 60;
             const valorTotal = (horasDecimais * valorHora).toFixed(2);
-            
             const horasExatas = Math.floor(minutosTotais / 60);
             const minutosRestantes = Math.round(minutosTotais % 60);
             const totalHoursText = `${horasExatas}h ${minutosRestantes}m`;
 
             try {
                 await addDoc(collection(db, "horas_extras"), {
-                    date,
-                    valorHora,
-                    start,
-                    end,
-                    reason,
+                    date, valorHora, start, end, reason,
                     totalHours: horasDecimais.toFixed(2),
                     totalHoursText,
                     totalValue: valorTotal,
                     createdAt: new Date()
                 });
-
-                alert("Hora extra registada com sucesso!");
+                alert("Registo guardado com sucesso!");
                 heForm.reset();
                 document.getElementById('he-date').valueAsDate = new Date();
-                document.getElementById('he-valor-hora').value = valorHora;
                 loadHorasExtras();
             } catch (error) {
-                alert("Ocorreu um erro ao guardar o registo.");
+                alert("Erro ao guardar.");
             }
         });
 
