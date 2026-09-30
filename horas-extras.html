@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.2">
+    <link rel="stylesheet" href="css/style.css?v=1.3">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
-    <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -22,7 +22,7 @@
                 <a href="index.html">🏠 Início / Histórico</a>
                 <a href="clientes.html">👥 Gestão de Clientes</a>
                 <a href="nova-os.html">📋 Nova Ordem de Serviço</a>
-                <a href="horas-extras.html" class="active">⏱️ Horas Extras</a>
+                <a href="horas-extras.html" class="active">⏱️️ Horas Extras</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
                 
                 <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
@@ -40,9 +40,9 @@
                 
                 <h2>Registo de Horas Extras</h2>
 
-                <!-- Painel de Relatório Mensal e Importação Automática -->
+                <!-- Painel de Relatório Excel e Importação Automática -->
                 <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ced4da; display: flex; flex-direction: column; gap: 12px;">
-                    <h3 style="margin: 0; color: #2c3e50; font-size: 15px;">📊 Relatório Consolidado do Mês</h3>
+                    <h3 style="margin: 0; color: #2c3e50; font-size: 15px;">📊 Relatório Consolidado para Excel (.xlsx)</h3>
                     
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
                         <div style="flex: 1; min-width: 150px;">
@@ -50,7 +50,7 @@
                             <input type="month" id="rel-mes-ano" style="width: 100%; padding: 6px; box-sizing: border-box; font-size: 13px;">
                         </div>
                         <div>
-                            <button type="button" id="btn-gerar-relatorio-mes" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">📄 Gerar Relatório do Mês PDF</button>
+                            <button type="button" id="btn-gerar-excel" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">📥 Gerar Relatório Excel (.xlsx)</button>
                         </div>
                     </div>
 
@@ -193,28 +193,8 @@
             }
         }
 
-        // Função para converter imagem em Base64 para o PDF
-        function getBase64ImageFromUrl(url) {
-            return new Promise((resolve) => {
-                if (!url) { resolve(null); return; }
-                const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                img.onload = function() {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width; canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg'));
-                    } catch (e) { resolve(null); }
-                };
-                img.onerror = function() { resolve(null); };
-                img.src = url;
-            });
-        }
-
-        // Gerar Relatório Consolidado do Mês Selecionado
-        document.getElementById('btn-gerar-relatorio-mes').addEventListener('click', async () => {
+        // Gerar Relatório Excel Estruturado (.xlsx)
+        document.getElementById('btn-gerar-excel').addEventListener('click', () => {
             const mesAnoValor = document.getElementById('rel-mes-ano').value; // Formato "YYYY-MM"
             if (!mesAnoValor) {
                 alert("Por favor, selecione o mês e o ano!");
@@ -234,146 +214,63 @@
                 return;
             }
 
-            try {
-                const { jsPDF } = window.jspdf;
-                const docPDF = new jsPDF();
+            // Preparar dados com o cabeçalho exato pedido
+            let dadosExcel = [];
+            let somaValorTotal = 0;
 
-                const empresa = {
-                    nome: "RG Soluções Técnicas",
-                    razaoSocial: "RG SOLUCOES TECNICAS LTDA",
-                    email: "gcrodeghiero@gmail.com",
-                    cnpj: "54.875.741/0001-45"
-                };
-
-                const dataEmissao = new Date().toLocaleDateString('pt-BR');
-                const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
-                if (logoBase64) {
-                    docPDF.addImage(logoBase64, 'PNG', 20, 6, 26, 11);
+            itensDoMes.forEach(item => {
+                // Formatar período
+                let periodoStr = "N/A";
+                if (item.start && item.end) {
+                    const hInicio = new Date(item.start).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    const hFim = new Date(item.end).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    periodoStr = `${hInicio} às ${hFim}`;
                 }
 
-                docPDF.setFont("helvetica", "bold");
-                docPDF.setFontSize(11);
-                docPDF.text(`Relatório Consolidado de Horas Extras - ${mesSel}/${anoSel}`, 48, 10);
-                
-                docPDF.setFontSize(8);
-                docPDF.setTextColor(0, 123, 255);
-                docPDF.text(`Emitido em: ${dataEmissao}`, 145, 10);
+                const valorNum = parseFloat(item.totalValue) || 0;
+                somaValorTotal += valorNum;
 
-                docPDF.setLineWidth(0.3);
-                docPDF.line(20, 16, 190, 16);
-
-                let y = 22;
-
-                // Informações da empresa
-                docPDF.setFont("helvetica", "bold");
-                docPDF.setFontSize(8.5);
-                docPDF.setTextColor(40, 40, 40);
-                docPDF.text("Prestador:", 20, y);
-                docPDF.setFont("helvetica", "normal");
-                docPDF.text(`${empresa.nome} (CNPJ: ${empresa.cnpj})`, 40, y);
-                y += 5;
-
-                docPDF.setFont("helvetica", "bold");
-                docPDF.text("Período:", 20, y);
-                docPDF.setFont("helvetica", "normal");
-                docPDF.text(`Mês de Referência: ${mesSel}/${anoSel}`, 40, y);
-                y += 10;
-
-                // Cabeçalho da Tabela
-                docPDF.setFillColor(230, 235, 245);
-                docPDF.rect(20, y, 170, 6, 'F');
-                docPDF.setFont("helvetica", "bold");
-                docPDF.setFontSize(8);
-                docPDF.text("Data", 22, y + 4);
-                docPDF.text("Duração", 52, y + 4);
-                docPDF.text("Valor Total", 82, y + 4);
-                docPDF.text("Motivo / Descrição", 112, y + 4);
-                y += 8;
-
-                let somaHorasDecimais = 0;
-                let somaValorTotal = 0;
-
-                docPDF.setFont("helvetica", "normal");
-                docPDF.setFontSize(7.5);
-
-                itensDoMes.forEach(item => {
-                    if (y > 270) {
-                        docPDF.addPage();
-                        y = 20;
-                    }
-
-                    const valH = parseFloat(item.totalHours) || 0;
-                    const valV = parseFloat(item.totalValue) || 0;
-                    somaHorasDecimais += valH;
-                    somaValorTotal += valV;
-
-                    docPDF.text(String(item.date || '-'), 22, y);
-                    docPDF.text(String(item.totalHoursText || '-'), 52, y);
-                    docPDF.text(`R$ ${valV.toFixed(2)}`, 82, y);
-                    
-                    const motivoCurto = docPDF.splitTextToSize(String(item.reason || '-'), 75);
-                    docPDF.text(motivoCurto, 112, y);
-
-                    y += (motivoCurto.length * 4) + 2;
+                dadosExcel.push({
+                    "Dia / Data": item.date || '',
+                    "Período / Horário": periodoStr,
+                    "Descrição / Motivo": item.reason || '',
+                    "Carga Horária": item.totalHoursText || `${item.totalHours}h`,
+                    "Valor Total (R$)": valorNum
                 });
+            });
 
-                y += 5;
-                docPDF.setLineWidth(0.2);
-                docPDF.line(20, y, 190, y);
-                y += 6;
+            // Adicionar linha de totalizador financeiro no final
+            dadosExcel.push({
+                "Dia / Data": "TOTAL GERAL",
+                "Período / Horário": "",
+                "Descrição / Motivo": "",
+                "Carga Horária": "",
+                "Valor Total (R$)": somaValorTotal
+            });
 
-                // Totais Gerais
-                docPDF.setFont("helvetica", "bold");
-                docPDF.setFontSize(9);
-                docPDF.text(`TOTAL GERAL DE HORAS: ${somaHorasDecimais.toFixed(2)}h`, 20, y);
-                y += 6;
-                docPDF.setTextColor(0, 128, 0);
-                docPDF.text(`VALOR TOTAL A RECEBER: R$ ${somaValorTotal.toFixed(2)}`, 20, y);
+            // Criar a worksheet e o workbook usando SheetJS
+            const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Horas Extras");
 
-                // Assinatura
-                let sigY = y + 25;
-                docPDF.setLineWidth(0.2);
-                docPDF.line(55, sigY, 155, sigY);
-                docPDF.setFontSize(7);
-                docPDF.setTextColor(0, 0, 0);
-                docPDF.setFont("helvetica", "normal");
-                docPDF.text("Assinatura do Técnico / Responsável", 82, sigY + 4);
+            // Ajustar largura automática das colunas para melhor visualização
+            const wscols = [
+                {wch: 15}, // Dia / Data
+                {wch: 22}, // Período / Horário
+                {wch: 35}, // Descrição / Motivo
+                {wch: 15}, // Carga Horária
+                {wch: 18}  // Valor Total (R$)
+            ];
+            worksheet['!cols'] = wscols;
 
-                const pdfBlob = docPDF.output('blob');
-                const fileName = `Relatorio_HorasExtras_${mesSel}_${anoSel}.pdf`;
-                const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
-                if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                    try {
-                        await navigator.share({
-                            title: `Relatório de Horas Extras - ${mesSel}/${anoSel}`,
-                            text: `Segue o relatório consolidado de horas extras do mês ${mesSel}/${anoSel}.`,
-                            files: [pdfFile],
-                        });
-                        return;
-                    } catch (error) { if (error.name === 'AbortError') return; }
-                }
-
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = pdfUrl;
-                downloadLink.download = fileName;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                alert("Relatório mensal gerado com sucesso!");
-
-            } catch (error) {
-                console.error("Erro ao gerar PDF:", error);
-                alert("Ocorreu um erro ao gerar o relatório mensal.");
-            }
+            // Descarregar o ficheiro .xlsx
+            XLSX.writeFile(workbook, `Relatorio_Horas_Extras_${mesSel}_${anoSel}.xlsx`);
         });
 
-        // Botão para importar automaticamente a lista que enviaste para testes
+        // Botão para importar automaticamente a lista para testes
         document.getElementById('btn-importar-lote').addEventListener('click', async () => {
             if (!confirm("Deseja importar automaticamente os 13 registos de horas extras para o sistema?")) return;
 
-            // Dados correspondentes à lista enviada (assumindo o mês atual, ex: Setembro/Outubro de 2026 ou ajustável)
             const anoMesBase = document.getElementById('rel-mes-ano').value || `${anoAtual}-${mesAtual}`;
             
             const listaParaImportar = [
@@ -432,7 +329,7 @@
             const date = document.getElementById('he-date').value;
             const valorHora = parseFloat(document.getElementById('he-valor-hora').value) || 200.00;
             const start = document.getElementById('he-start').value;
-            const end = document.getElementById('he-end').value;
+            const end = document.getElementById('he-end'].value;
             const reason = document.getElementById('he-reason').value;
 
             const diffMs = new Date(end) - new Date(start);
