@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.6">
+    <link rel="stylesheet" href="css/style.css?v=1.7">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
@@ -104,7 +104,7 @@
 
     <!-- Script Principal -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.6';
+        import { db, auth } from './js/firebase-config.js?v=1.7';
         import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -195,7 +195,7 @@
             }
         }
 
-        // Gerar Relatório Excel Estruturado (.xlsx)
+        // Gerar Relatório Excel Estruturado (.xlsx) - Ordenado do Dia 1 ao Fim do Mês
         document.getElementById('btn-gerar-excel').addEventListener('click', () => {
             const mesAnoValor = document.getElementById('rel-mes-ano').value;
             if (!mesAnoValor) {
@@ -213,6 +213,9 @@
                 alert(`Não existem registos para o mês ${mesSel}/${anoSel}!`);
                 return;
             }
+
+            // Ordenar por ordem cronológica crescente (do dia 1 para a frente)
+            itensDoMes.sort((a, b) => new Date(a.date) - new Date(b.date));
 
             let dadosExcel = [];
             let somaValorTotal = 0;
