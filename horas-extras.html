@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registo de Horas Extras - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.9">
+    <link rel="stylesheet" href="css/style.css?v=1.11">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca SheetJS para exportar ficheiros Excel (.xlsx) -->
@@ -55,9 +55,9 @@
                     </div>
                 </div>
 
-                <!-- Formulário de Registo Manual -->
+                <!-- Formulário de Registo / Edição Manual -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Registo Manual</h3>
+                    <h3 id="form-title" style="margin-top: 0; color: #2c3e50; font-size: 16px;">Adicionar Registo Manual</h3>
                     
                     <form id="he-form">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
@@ -87,7 +87,10 @@
                             <textarea id="he-reason" rows="3" required placeholder="Ex: Suporte técnico..." style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
                         </div>
 
-                        <button type="submit" id="btn-submit-he" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%;">Guardar Hora Extra</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" id="btn-submit-he" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1;">Guardar Hora Extra</button>
+                            <button type="button" id="btn-cancel-edit" style="background: #6c757d; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none;">Cancelar</button>
+                        </div>
                     </form>
                 </div>
 
@@ -104,8 +107,8 @@
 
     <!-- Script Principal -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=1.9';
-        import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { db, auth } from './js/firebase-config.js?v=1.11';
+        import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         let authChecked = false;
@@ -153,6 +156,12 @@
         document.getElementById('rel-mes-ano').value = `${anoAtual}-${mesAtual}`;
 
         let allHE = [];
+        let editingHEId = null;
+
+        const heForm = document.getElementById('he-form');
+        const formTitle = document.getElementById('form-title');
+        const btnSubmitHE = document.getElementById('btn-submit-he');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
 
         // Função para formatar a data yyyy-mm-dd para dd/mm/aaaa
         function formatDateBR(dateStr) {
@@ -207,7 +216,8 @@
                             <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Fim:</strong> ${fimFormatado}</p>
                             <p style="margin: 4px 0; font-size: 13px; color: #555;"><strong>Duração:</strong> ${item.totalHoursText || '0h'} (${item.totalHours || 0}h)</p>
                             <p style="margin: 4px 0; font-size: 13px; color: #666;"><strong>Motivo:</strong> ${item.reason || 'Sem motivo'}</p>
-                            <div style="margin-top: 8px; text-align: right;">
+                            <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: flex-end;">
+                                <button type="button" onclick="prepararEdicaoHE('${item.id}')" style="background: #ffc107; color: #333; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">✏️ Editar</button>
                                 <button type="button" onclick="excluirHE('${item.id}')" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">🗑 Excluir</button>
                             </div>
                         </div>
@@ -218,6 +228,43 @@
                 console.error("Erro ao carregar do Firestore:", error);
                 document.getElementById('he-list').innerHTML = `<p style='color: red;'>Erro ao carregar da nuvem: ${error.message}</p>`;
             }
+        }
+
+        // Função para preparar o formulário para edição
+        window.prepararEdicaoHE = function(id) {
+            const item = allHE.find(h => h.id === id);
+            if (!item) return;
+
+            editingHEId = id;
+            document.getElementById('he-date').value = item.date || '';
+            document.getElementById('he-valor-hora').value = item.valorHora || 38.63;
+            document.getElementById('he-start').value = item.start || '';
+            document.getElementById('he-end').value = item.end || '';
+            document.getElementById('he-reason').value = item.reason || '';
+
+            formTitle.textContent = "Editar Registo de Hora Extra";
+            btnSubmitHE.textContent = "Atualizar Registo";
+            btnSubmitHE.style.background = "#ffc107";
+            btnSubmitHE.style.color = "#333";
+            btnCancelEdit.style.display = "inline-block";
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        btnCancelEdit.addEventListener('click', () => {
+            resetForm();
+        });
+
+        function resetForm() {
+            editingHEId = null;
+            heForm.reset();
+            document.getElementById('he-date').valueAsDate = new Date();
+            document.getElementById('he-valor-hora').value = 38.63;
+            formTitle.textContent = "Adicionar Registo Manual";
+            btnSubmitHE.textContent = "Guardar Hora Extra";
+            btnSubmitHE.style.background = "#28a745";
+            btnSubmitHE.style.color = "white";
+            btnCancelEdit.style.display = "none";
         }
 
         // Gerar Relatório Excel Estruturado (.xlsx) - Ordenado do Dia 1 ao Fim do Mês
@@ -296,7 +343,7 @@
             }
         };
 
-        const heForm = document.getElementById('he-form');
+        // Submeter formulário (Adicionar ou Atualizar)
         heForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const date = document.getElementById('he-date').value;
@@ -316,17 +363,37 @@
             const totalHoursText = `${horasExatas}h ${minutosRestantes}m`;
 
             try {
-                await addDoc(collection(db, "horas_extras"), {
-                    date, valorHora, start, end, reason,
-                    totalHours: horasDecimais.toFixed(2),
-                    totalHoursText,
-                    totalValue: valorTotal,
-                    createdAt: new Date()
-                });
-                alert("Registo sincronizado com sucesso na nuvem!");
-                heForm.reset();
-                document.getElementById('he-date').valueAsDate = new Date();
-                document.getElementById('he-valor-hora').value = valorHora;
+                if (editingHEId) {
+                    // Atualizar registo existente na nuvem
+                    const heRef = doc(db, "horas_extras", editingHEId);
+                    await updateDoc(heRef, {
+                        date,
+                        valorHora,
+                        start,
+                        end,
+                        reason,
+                        totalHours: horasDecimais.toFixed(2),
+                        totalHoursText,
+                        totalValue: valorTotal
+                    });
+                    alert("Registo atualizado com sucesso na nuvem!");
+                } else {
+                    // Criar novo registo na nuvem
+                    await addDoc(collection(db, "horas_extras"), {
+                        date,
+                        valorHora,
+                        start,
+                        end,
+                        reason,
+                        totalHours: horasDecimais.toFixed(2),
+                        totalHoursText,
+                        totalValue: valorTotal,
+                        createdAt: new Date()
+                    });
+                    alert("Registo sincronizado com sucesso na nuvem!");
+                }
+
+                resetForm();
                 loadHorasExtras();
             } catch (error) {
                 console.error("Erro ao guardar no Firestore:", error);
