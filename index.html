@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=3.1">
+    <link rel="stylesheet" href="css/style.css?v=3.2">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
@@ -189,9 +189,9 @@
         }
     </script>
 
-    <!-- Script com Cache Busting (v=3.1) -->
+    <!-- Script com Cache Busting (v=3.2) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=3.1';
+        import { db, auth } from './js/firebase-config.js?v=3.2';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -204,7 +204,6 @@
             }
         });
 
-        // Margem de segurança de 2 segundos para o carregamento correto da sessão no PWA
         setTimeout(() => {
             if (!authChecked && !auth.currentUser) {
                 window.location.href = 'login.html';
@@ -474,7 +473,7 @@
                                     ✏️ Editar
                                 </button>
                                 <button onclick="excluirOS('${order.id}')" style="background: #dc3545; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; flex: 1;">
-                                    🗑️ Excluir
+                                    🗑️️ Excluir
                                 </button>
                             </div>
                         </div>
@@ -872,7 +871,7 @@
 
         document.getElementById('apply-filters').addEventListener('click', () => {
             const selectedClient = document.getElementById('filter-client').value;
-            const selectedType = document.getElementById('filter-type').value;
+            const selectedType = document.getElementById('filter-type'].value;
             const startDate = document.getElementById('filter-start').value;
             const endDate = document.getElementById('filter-end').value;
 
