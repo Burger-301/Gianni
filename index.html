@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=3.3">
+    <link rel="stylesheet" href="css/style.css?v=3.5">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
@@ -25,7 +25,6 @@
                 <a href="horas-extras.html">⏱️ Horas Extras</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
                 
-                <!-- Assinatura solicitada abaixo do Terminar Sessão -->
                 <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
                     Powered by CS Code Solutions
                 </div>
@@ -34,7 +33,6 @@
 
         <!-- Conteúdo Principal -->
         <main class="main-content">
-            <!-- Botão de menu para telemóveis -->
             <button class="menu-toggle" id="menuToggle">☰ Menu</button>
 
             <div class="container" style="max-width: 800px;">
@@ -48,7 +46,6 @@
                     
                     <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <!-- Filtro por Cliente -->
                             <div style="flex: 1; min-width: 180px;">
                                 <label style="font-size: 12px; font-weight: bold;">Cliente:</label>
                                 <select id="filter-client" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
@@ -56,7 +53,6 @@
                                 </select>
                             </div>
                             
-                            <!-- Filtro por Tipo de Manutenção -->
                             <div style="flex: 1; min-width: 140px;">
                                 <label style="font-size: 12px; font-weight: bold;">Tipo:</label>
                                 <select id="filter-type" style="width: 100%; padding: 6px; font-size: 13px; margin-top: 2px;">
@@ -69,19 +65,16 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                            <!-- Data Início -->
                             <div style="flex: 1; min-width: 130px;">
                                 <label style="font-size: 12px; font-weight: bold;">Início:</label>
                                 <input type="date" id="filter-start" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
                             </div>
                             
-                            <!-- Data Fim -->
                             <div style="flex: 1; min-width: 130px;">
                                 <label style="font-size: 12px; font-weight: bold;">Fim:</label>
                                 <input type="date" id="filter-end" style="width: 100%; padding: 5px; font-size: 13px; margin-top: 2px;">
                             </div>
 
-                            <!-- Botão Aplicar -->
                             <div>
                                 <button type="button" id="apply-filters" style="padding: 7px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">Filtrar</button>
                             </div>
@@ -186,7 +179,6 @@
                     .then((registration) => {
                         console.log("Service Worker registado com sucesso!");
 
-                        // Forçar deteção e atualização imediata de nova versão
                         registration.onupdatefound = () => {
                             const installingWorker = registration.installing;
                             installingWorker.onstatechange = () => {
@@ -212,9 +204,9 @@
         }
     </script>
 
-    <!-- Script com Cache Busting (v=3.3) -->
+    <!-- Script com Cache Busting (v=3.5) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=3.3';
+        import { db, auth } from './js/firebase-config.js?v=3.5';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -348,6 +340,7 @@
             return payload + crcHex;
         }
 
+        // Retorna base64 e as dimensões reais da imagem
         function getBase64ImageFromUrl(url) {
             return new Promise((resolve) => {
                 if (!url) {
@@ -363,7 +356,11 @@
                         canvas.height = img.height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg'));
+                        resolve({
+                            dataUrl: canvas.toDataURL('image/jpeg'),
+                            width: img.width,
+                            height: img.height
+                        });
                     } catch (e) {
                         console.warn("Erro ao converter imagem para Base64:", e);
                         resolve(null);
@@ -652,9 +649,9 @@
                 const dataEmissao = new Date().toLocaleDateString('pt-BR');
                 const numOSFormatted = calcularNumeroOS(order) || "00013";
 
-                const logoBase64 = await getBase64ImageFromUrl('img/logo.png');
-                if (logoBase64) {
-                    docPDF.addImage(logoBase64, 'PNG', 20, 6, 26, 11);
+                const logoResult = await getBase64ImageFromUrl('img/logo.png');
+                if (logoResult) {
+                    docPDF.addImage(logoResult.dataUrl, 'PNG', 20, 6, 26, 11);
                 }
 
                 docPDF.setFont("helvetica", "bold");
@@ -789,9 +786,9 @@
                 const pixPayload = gerarPayloadPix(empresa.cnpj, empresa.razaoSocial, empresa.cidade, order.totalValue || 0, `OS${numOSFormatted}`);
                 const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixPayload)}`;
                 
-                const pixBase64 = await getBase64ImageFromUrl(qrCodeApiUrl);
-                if (pixBase64) {
-                    docPDF.addImage(pixBase64, 'PNG', 156, (y - 9) + 8, 15, 15);
+                const qrResult = await getBase64ImageFromUrl(qrCodeApiUrl);
+                if (qrResult) {
+                    docPDF.addImage(qrResult.dataUrl, 'PNG', 156, (y - 9) + 8, 15, 15);
                     docPDF.setFontSize(6);
                     docPDF.text("Escaneie para pagar", 154, (y + 8) + 8);
                 }
@@ -832,10 +829,24 @@
 
                     for (let i = 0; i < listaAnexos.length; i++) {
                         const anexo = listaAnexos[i];
-                        const imgBase64 = await getBase64ImageFromUrl(anexo.url);
+                        const imgResult = await getBase64ImageFromUrl(anexo.url);
                         
-                        if (imgBase64) {
-                            if (anexoY + 70 > 270) {
+                        if (imgResult) {
+                            // Cálculo proporcional baseado nas dimensões reais para evitar distorção
+                            const maxWidth = 140;
+                            const maxHeight = 110;
+                            let imgWidth = maxWidth;
+                            let imgHeight = (imgResult.height * maxWidth) / imgResult.width;
+
+                            if (imgHeight > maxHeight) {
+                                imgHeight = maxHeight;
+                                imgWidth = (imgResult.width * maxHeight) / imgResult.height;
+                            }
+
+                            // Centralizar horizontalmente
+                            const startX = 20 + (170 - imgWidth) / 2;
+
+                            if (anexoY + imgHeight + 15 > 270) {
                                 docPDF.addPage();
                                 anexoY = 20;
                             }
@@ -845,8 +856,8 @@
                             docPDF.text(`• ${anexo.title || `Anexo ${i + 1}`}`, 20, anexoY);
                             anexoY += 5;
 
-                            docPDF.addImage(imgBase64, 'JPEG', 35, anexoY, 140, 60);
-                            anexoY += 68;
+                            docPDF.addImage(imgResult.dataUrl, 'JPEG', startX, anexoY, imgWidth, imgHeight);
+                            anexoY += imgHeight + 12;
                         }
                     }
                 }
