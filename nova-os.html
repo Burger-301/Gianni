@@ -4,8 +4,8 @@
     <link rel="icon" href="img/ico1.png" type="image/png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nova Ordem de Serviço - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=1.7">
+    <title>Nova RAT - RG Soluções Técnicas</title>
+    <link rel="stylesheet" href="css/style.css?v=3.8">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Signature Pad CDN -->
@@ -21,11 +21,10 @@
             <nav>
                 <a href="index.html">🏠 Início / Histórico</a>
                 <a href="clientes.html">👥 Gestão de Clientes</a>
-                <a href="nova-os.html" class="active">📋 Nova Ordem de Serviço</a>
+                <a href="nova-os.html" class="active">📋 Nova RAT</a>
                 <a href="horas-extras.html">⏱️ Horas Extras</a>
                 <a href="#" id="btn-logout" style="margin-top: 30px; background: #dc3545; text-align: center;">🚪 Terminar Sessão</a>
                 
-                <!-- Assinatura solicitada abaixo do Terminar Sessão -->
                 <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #adb5bd; font-weight: 500;">
                     Powered by CS Code Solutions
                 </div>
@@ -39,7 +38,7 @@
             <div class="container" style="max-width: 800px;">
                 <a href="index.html" class="voltar">⬅ Voltar ao Início</a>
                 
-                <h2>Nova Ordem de Serviço</h2>
+                <h2>Nova RAT</h2>
 
                 <form id="os-form" style="margin-top: 20px;">
                     <!-- Seleção de Cliente -->
@@ -88,6 +87,9 @@
                             <select id="service-area" required style="width: 100%; padding: 8px; box-sizing: border-box;">
                                 <option value="Elétrica">Elétrica</option>
                                 <option value="Mecânica">Mecânica</option>
+                                <option value="Eletrônica">Eletrônica</option>
+                                <option value="Hidráulica">Hidráulica</option>
+                                <option value="Outros">Outros</option>
                             </select>
                         </div>
                     </div>
@@ -229,7 +231,7 @@
                     </div>
 
                     <div style="margin-top: 30px;">
-                        <button type="submit" style="width: 100%; padding: 12px; background: #28a745; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">Guardar Ordem de Serviço</button>
+                        <button type="submit" style="width: 100%; padding: 12px; background: #28a745; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">Guardar RAT</button>
                     </div>
                 </form>
             </div>
@@ -280,7 +282,8 @@
     </script>
 
     <script type="module">
-        import { auth } from './js/firebase-config.js?v=1.7';
+        import { auth, db } from './js/firebase-config.js?v=3.8';
+        import { collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
@@ -304,17 +307,168 @@
             });
         }
 
-        const btnLogout = document.getElementById('btn-logout');
-        if (btnLogout) {
-            btnLogout.addEventListener('click', async (e) => {
-                e.preventDefault();
-                await signOut(auth);
-                window.location.href = 'login.html';
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'login.html';
+        });
+
+        // Inicializar Signature Pads
+        const techPad = new SignaturePad(document.getElementById('tech-pad'));
+        const clientPad = new SignaturePad(document.getElementById('client-pad'));
+
+        document.getElementById('clear-tech').addEventListener('click', () => techPad.clear());
+        document.getElementById('clear-client').addEventListener('click', () => clientPad.clear());
+
+        // Carregar clientes na lista de seleção
+        async function carregarClientes() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "clients"));
+                const select = document.getElementById('client-select');
+                select.innerHTML = '<option value="">Selecione um cliente...</option>';
+                querySnapshot.forEach((docSnap) => {
+                    const client = docSnap.data();
+                    const option = document.createElement('option');
+                    option.value = docSnap.id;
+                    option.textContent = client.name || client.razaoSocial;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar clientes:", error);
+            }
+        }
+
+        carregarClientes();
+
+        // Conversão de ficheiro para Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
             });
         }
-    </script>
 
-    <!-- Script principal da O.S. com Cache Busting (v=1.7) -->
-    <script type="module" src="js/os.js?v=1.7"></script>
+        // Submissão do Formulário para criar nova RAT
+        document.getElementById('os-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const clientId = document.getElementById('client-select').value;
+            const equipment = document.getElementById('equipment').value;
+            const brand = document.getElementById('brand').value;
+            const model = document.getElementById('model').value;
+            const serialNumber = document.getElementById('serial-number').value;
+            const serviceNature = document.getElementById('service-nature').value;
+            const serviceArea = document.getElementById('service-area').value;
+            const technicianName = document.getElementById('technician-name').value;
+            const description = document.getElementById('description').value;
+            const paymentTerms = document.getElementById('payment-terms').value;
+
+            const temHora = document.getElementById('tem-hora').value;
+            const valorHora = parseFloat(document.getElementById('valor-hora').value) || 200.00;
+            const timeStartManha = document.getElementById('time-start-manha').value;
+            const timeEndManha = document.getElementById('time-end-manha').value;
+            const timeStartTarde = document.getElementById('time-start-tarde').value;
+            const timeEndTarde = document.getElementById('time-end-tarde').value;
+
+            const temKm = document.getElementById('tem-km').value;
+            const valorKm = parseFloat(document.getElementById('valor-km').value) || 0;
+            const kmIda = parseFloat(document.getElementById('km-ida').value) || 0;
+            const kmVolta = parseFloat(document.getElementById('km-volta').value) || 0;
+
+            const temCombustivel = document.getElementById('tem-combustivel').value;
+            const valorLitro = parseFloat(document.getElementById('valor-litro').value) || 0;
+            const combustivelLitros = parseFloat(document.getElementById('combustivel-litros').value) || 0;
+
+            // Processar Assinaturas
+            const technicianSignature = !techPad.isEmpty() ? techPad.toDataURL() : null;
+            const customerSignature = !clientPad.isEmpty() ? clientPad.toDataURL() : null;
+
+            // Processar Anexos Dinâmicos
+            const anexoRows = document.querySelectorAll('.anexo-row');
+            const attachments = [];
+            for (let row of anexoRows) {
+                const tituloInput = row.querySelector('.anexo-titulo').value || 'Anexo';
+                const fileInput = row.querySelector('.anexo-ficheiro');
+                if (fileInput.files && fileInput.files[0]) {
+                    const base64Url = await fileToBase64(fileInput.files[0]);
+                    attachments.push({
+                        title: tituloInput,
+                        url: base64Url
+                    });
+                }
+            }
+
+            // Cálculo de Horas Trabalhadas
+            let minutosTotais = 0;
+            if (timeStartManha && timeEndManha) {
+                const diffM = new Date(timeEndManha) - new Date(timeStartManha);
+                if (diffM > 0) minutosTotais += diffM / (1000 * 60);
+            }
+            if (timeStartTarde && timeEndTarde) {
+                const diffT = new Date(timeEndTarde) - new Date(timeStartTarde);
+                if (diffT > 0) minutosTotais += diffT / (1000 * 60);
+            }
+
+            const horasDecimais = minutosTotais / 60;
+            const valorHorasTotal = temHora === 'sim' ? horasDecimais * valorHora : 0;
+            const horasExatas = Math.floor(minutosTotais / 60);
+            const minutosRestantes = Math.round(minutosTotais % 60);
+            const totalHoursText = `${horasExatas}h ${minutosRestantes}m`;
+
+            // Cálculo de Deslocamento e Combustível
+            const totalKm = kmIda + kmVolta;
+            const valorKmTotal = temKm === 'sim' ? totalKm * valorKm : 0;
+            const valorCombustivelTotal = temCombustivel === 'sim' ? combustivelLitros * valorLitro : 0;
+
+            const totalValue = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
+            const timeEndOficial = timeEndTarde ? timeEndTarde : (timeEndManha ? timeEndManha : '');
+
+            try {
+                await addDoc(collection(db, "service_orders"), {
+                    clientId,
+                    equipment,
+                    brand,
+                    model,
+                    serialNumber,
+                    serviceNature,
+                    serviceArea,
+                    technicianName,
+                    description,
+                    paymentTerms,
+                    temHora,
+                    valorHora: valorHora.toFixed(2),
+                    timeStartManha,
+                    timeEndManha,
+                    timeStartTarde,
+                    timeEndTarde,
+                    timeEnd: timeEndOficial,
+                    totalHours: horasDecimais.toFixed(2),
+                    totalHoursText,
+                    valorHorasTotal: valorHorasTotal.toFixed(2),
+                    temKm,
+                    kmIda,
+                    kmVolta,
+                    totalKm,
+                    valorKmTotal: valorKmTotal.toFixed(2),
+                    temCombustivel,
+                    combustivelLitros,
+                    valorCombustivelTotal: valorCombustivelTotal.toFixed(2),
+                    totalValue,
+                    technicianSignature,
+                    customerSignature,
+                    attachments,
+                    createdAt: serverTimestamp()
+                });
+
+                alert("RAT criada com sucesso!");
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Erro ao guardar RAT:", error);
+                alert("Ocorreu um erro ao guardar a RAT.");
+            }
+        });
+    </script>
 </body>
 </html>
