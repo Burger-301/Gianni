@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova RAT - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=3.8">
+    <link rel="stylesheet" href="css/style.css?v=3.9">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Signature Pad CDN -->
@@ -94,9 +94,9 @@
                         </div>
                     </div>
 
-                    <!-- CRITÉRIOS DE COBRANÇA E DESLOCAÇÃO -->
+                    <!-- CRITÉRIOS DE COBRANÇA E DESLOCAMENTO -->
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd;">
-                        <h3 style="font-size: 15px; margin-top: 0; color: #2c3e50; margin-bottom: 15px;">Critérios de Cobrança e Deslocação</h3>
+                        <h3 style="font-size: 15px; margin-top: 0; color: #2c3e50; margin-bottom: 15px;">Critérios de Cobrança e Deslocamento</h3>
                         
                         <!-- 1. HORA TRABALHADA -->
                         <div style="margin-bottom: 12px;">
@@ -163,7 +163,7 @@
                         </div>
 
                         <!-- 3. COMBUSTÍVEL -->
-                        <div style="margin-bottom: 8px;">
+                        <div style="margin-bottom: 12px;">
                             <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Adicionar Combustível?</label>
                             <select id="tem-combustivel" style="width: 100%; padding: 8px; box-sizing: border-box;">
                                 <option value="nao">Não</option>
@@ -172,7 +172,7 @@
                         </div>
 
                         <!-- Campos Litros e Valor do Litro -->
-                        <div id="bloco-combustivel" style="display: none; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                        <div id="bloco-combustivel" style="display: none; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 15px;">
                             <div style="margin-bottom: 10px;">
                                 <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 12px;">Valor por Litro (R$):</label>
                                 <input type="number" step="0.01" id="valor-litro" placeholder="Ex: 6.00" style="width: 100%; padding: 6px; box-sizing: border-box;">
@@ -180,6 +180,31 @@
                             <div>
                                 <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 12px;">Quantidade (Litros):</label>
                                 <input type="number" step="0.1" id="combustivel-litros" placeholder="Ex: 15.5" style="width: 100%; padding: 6px; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- 4. OUTRAS DESPESAS (Pedágios, Alimentação, Hospedagem) -->
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Adicionar Outras Despesas (Pedágios, Alimentação, Hospedagem)?</label>
+                            <select id="tem-despesas" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                                <option value="nao">Não</option>
+                                <option value="sim">Sim</option>
+                            </select>
+                        </div>
+
+                        <!-- Campos de Despesas Extras -->
+                        <div id="bloco-despesas" style="display: none; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 12px;">Pedágios (R$):</label>
+                                <input type="number" step="0.01" id="valor-pedagio" value="0.00" style="width: 100%; padding: 6px; box-sizing: border-box;">
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 12px;">Alimentação (R$):</label>
+                                <input type="number" step="0.01" id="valor-alimentacao" value="0.00" style="width: 100%; padding: 6px; box-sizing: border-box;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 12px;">Hospedagem (R$):</label>
+                                <input type="number" step="0.01" id="valor-hospedagem" value="0.00" style="width: 100%; padding: 6px; box-sizing: border-box;">
                             </div>
                         </div>
                     </div>
@@ -201,7 +226,6 @@
                         <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #2c3e50;">Anexo(s)</label>
                         
                         <div id="container-anexos" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
-                            <!-- Linha de Anexo Inicial -->
                             <div class="anexo-row" style="display: flex; gap: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
                                 <input type="text" placeholder="Nome do anexo (Ex: Antes da Intervenção)" class="anexo-titulo" style="flex: 1; padding: 6px; box-sizing: border-box;">
                                 <input type="file" accept="image/*" class="anexo-ficheiro" style="flex: 1; padding: 4px;">
@@ -238,24 +262,24 @@
         </main>
     </div>
 
-    <!-- Script para controlo visual dos blocos dinâmicos e anexos múltiplos -->
+    <!-- Script para controlo visual dos blocos dinâmicos e anexos -->
     <script>
         document.getElementById('tem-hora').addEventListener('change', function() {
-            const bloco = document.getElementById('bloco-turnos');
-            bloco.style.display = this.value === 'sim' ? 'block' : 'none';
+            document.getElementById('bloco-turnos').style.display = this.value === 'sim' ? 'block' : 'none';
         });
 
         document.getElementById('tem-km').addEventListener('change', function() {
-            const bloco = document.getElementById('bloco-km');
-            bloco.style.display = this.value === 'sim' ? 'block' : 'none';
+            document.getElementById('bloco-km').style.display = this.value === 'sim' ? 'block' : 'none';
         });
 
         document.getElementById('tem-combustivel').addEventListener('change', function() {
-            const bloco = document.getElementById('bloco-combustivel');
-            bloco.style.display = this.value === 'sim' ? 'block' : 'none';
+            document.getElementById('bloco-combustivel').style.display = this.value === 'sim' ? 'block' : 'none';
         });
 
-        // Adicionar linhas de anexos dinamicamente
+        document.getElementById('tem-despesas').addEventListener('change', function() {
+            document.getElementById('bloco-despesas').style.display = this.value === 'sim' ? 'block' : 'none';
+        });
+
         document.getElementById('btn-adicionar-anexo').addEventListener('click', function() {
             const container = document.getElementById('container-anexos');
             const novaLinha = document.createElement('div');
@@ -282,7 +306,7 @@
     </script>
 
     <script type="module">
-        import { auth, db } from './js/firebase-config.js?v=3.8';
+        import { auth, db } from './js/firebase-config.js?v=3.9';
         import { collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -313,14 +337,12 @@
             window.location.href = 'login.html';
         });
 
-        // Inicializar Signature Pads
         const techPad = new SignaturePad(document.getElementById('tech-pad'));
         const clientPad = new SignaturePad(document.getElementById('client-pad'));
 
         document.getElementById('clear-tech').addEventListener('click', () => techPad.clear());
         document.getElementById('clear-client').addEventListener('click', () => clientPad.clear());
 
-        // Carregar clientes na lista de seleção
         async function carregarClientes() {
             try {
                 const querySnapshot = await getDocs(collection(db, "clients"));
@@ -340,7 +362,6 @@
 
         carregarClientes();
 
-        // Conversão de ficheiro para Base64
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -350,7 +371,6 @@
             });
         }
 
-        // Submissão do Formulário para criar nova RAT
         document.getElementById('os-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -381,11 +401,16 @@
             const valorLitro = parseFloat(document.getElementById('valor-litro').value) || 0;
             const combustivelLitros = parseFloat(document.getElementById('combustivel-litros').value) || 0;
 
-            // Processar Assinaturas
+            // Novas despesas extras
+            const temDespesas = document.getElementById('tem-despesas').value;
+            const valorPedagio = parseFloat(document.getElementById('valor-pedagio').value) || 0;
+            const valorAlimentacao = parseFloat(document.getElementById('valor-alimentacao').value) || 0;
+            const valorHospedagem = parseFloat(document.getElementById('valor-hospedagem').value) || 0;
+            const valorDespesasTotal = temDespesas === 'sim' ? (valorPedagio + valorAlimentacao + valorHospedagem) : 0;
+
             const technicianSignature = !techPad.isEmpty() ? techPad.toDataURL() : null;
             const customerSignature = !clientPad.isEmpty() ? clientPad.toDataURL() : null;
 
-            // Processar Anexos Dinâmicos
             const anexoRows = document.querySelectorAll('.anexo-row');
             const attachments = [];
             for (let row of anexoRows) {
@@ -393,14 +418,10 @@
                 const fileInput = row.querySelector('.anexo-ficheiro');
                 if (fileInput.files && fileInput.files[0]) {
                     const base64Url = await fileToBase64(fileInput.files[0]);
-                    attachments.push({
-                        title: tituloInput,
-                        url: base64Url
-                    });
+                    attachments.push({ title: tituloInput, url: base64Url });
                 }
             }
 
-            // Cálculo de Horas Trabalhadas
             let minutosTotais = 0;
             if (timeStartManha && timeEndManha) {
                 const diffM = new Date(timeEndManha) - new Date(timeStartManha);
@@ -417,12 +438,11 @@
             const minutosRestantes = Math.round(minutosTotais % 60);
             const totalHoursText = `${horasExatas}h ${minutosRestantes}m`;
 
-            // Cálculo de Deslocamento e Combustível
             const totalKm = kmIda + kmVolta;
             const valorKmTotal = temKm === 'sim' ? totalKm * valorKm : 0;
             const valorCombustivelTotal = temCombustivel === 'sim' ? combustivelLitros * valorLitro : 0;
 
-            const totalValue = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
+            const totalValue = (valorHorasTotal + valorKmTotal + valorCombustivelTotal + valorDespesasTotal).toFixed(2);
             const timeEndOficial = timeEndTarde ? timeEndTarde : (timeEndManha ? timeEndManha : '');
 
             try {
@@ -455,6 +475,11 @@
                     temCombustivel,
                     combustivelLitros,
                     valorCombustivelTotal: valorCombustivelTotal.toFixed(2),
+                    temDespesas,
+                    valorPedagio: valorPedagio.toFixed(2),
+                    valorAlimentacao: valorAlimentacao.toFixed(2),
+                    valorHospedagem: valorHospedagem.toFixed(2),
+                    valorDespesasTotal: valorDespesasTotal.toFixed(2),
                     totalValue,
                     technicianSignature,
                     customerSignature,
