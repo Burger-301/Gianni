@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=3.7">
+    <link rel="stylesheet" href="css/style.css?v=3.9">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
@@ -204,9 +204,9 @@
         }
     </script>
 
-    <!-- Script com Cache Busting (v=3.7) -->
+    <!-- Script com Cache Busting (v=3.9) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=3.7';
+        import { db, auth } from './js/firebase-config.js?v=3.9';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -534,8 +534,9 @@
             const valorHorasTotal = order && order.temHora === 'nao' ? 0 : parseFloat(calc.valorHorasTotal);
             const valorKmTotal = order && order.valorKmTotal ? parseFloat(order.valorKmTotal) : 0;
             const valorCombustivelTotal = order && order.valorCombustivelTotal ? parseFloat(order.valorCombustivelTotal) : 0;
+            const valorDespesasTotal = order && order.valorDespesasTotal ? parseFloat(order.valorDespesasTotal) : 0;
             
-            const novoTotalGeral = (valorHorasTotal + valorKmTotal + valorCombustivelTotal).toFixed(2);
+            const novoTotalGeral = (valorHorasTotal + valorKmTotal + valorCombustivelTotal + valorDespesasTotal).toFixed(2);
             const timeEndOficial = endT ? endT : (endM ? endM : '');
 
             try {
@@ -655,7 +656,6 @@
 
                 docPDF.setFont("helvetica", "bold");
                 docPDF.setFontSize(10.5);
-                // Espaçamento ajustado (X=49) para evitar colagem com o logótipo
                 docPDF.text("Relatório de Assistência Técnica (RAT)", 49, 10);
                 
                 docPDF.setFontSize(9.5);
@@ -767,6 +767,20 @@
                 if (order.temCombustivel === 'sim') {
                     docPDF.text(`• Combustível: ${order.combustivelLitros || 0} Litros - R$ ${order.valorCombustivelTotal || '0.00'}`, 22, y);
                     y += 5;
+                }
+                if (order.temDespesas === 'sim') {
+                    if (parseFloat(order.valorPedagio) > 0) {
+                        docPDF.text(`• Pedágios: R$ ${parseFloat(order.valorPedagio).toFixed(2)}`, 22, y);
+                        y += 5;
+                    }
+                    if (parseFloat(order.valorAlimentacao) > 0) {
+                        docPDF.text(`• Alimentação: R$ ${parseFloat(order.valorAlimentacao).toFixed(2)}`, 22, y);
+                        y += 5;
+                    }
+                    if (parseFloat(order.valorHospedagem) > 0) {
+                        docPDF.text(`• Hospedagem: R$ ${parseFloat(order.valorHospedagem).toFixed(2)}`, 22, y);
+                        y += 5;
+                    }
                 }
 
                 docPDF.setFont("helvetica", "bold");
