@@ -1,11 +1,13 @@
-const CACHE_NAME = 'rg-solucoes-v4';
+const CACHE_NAME = 'rg-solucoes-v5';
 const assetsToCache = [
     './index.html',
     './clientes.html',
     './nova-os.html',
+    './horas-extras.html',
     './login.html',
     './css/style.css',
-    './ig/ico.png'
+    './img/logo.png',
+    './img/ico1.png'
 ];
 
 // Instalação do Service Worker e criação da nova cache limpa
@@ -31,7 +33,7 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
-    self.clientsClaim();
+    self.clients.claim();
 });
 
 // Interceção de pedidos correta (cada página abre o seu ficheiro respetivo)
