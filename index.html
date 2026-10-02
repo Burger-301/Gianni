@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início / Histórico - RG Soluções Técnicas</title>
-    <link rel="stylesheet" href="css/style.css?v=3.6">
+    <link rel="stylesheet" href="css/style.css?v=3.7">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <!-- Biblioteca jsPDF para gerar os relatórios em PDF -->
@@ -204,9 +204,9 @@
         }
     </script>
 
-    <!-- Script com Cache Busting (v=3.6) -->
+    <!-- Script com Cache Busting (v=3.7) -->
     <script type="module">
-        import { db, auth } from './js/firebase-config.js?v=3.6';
+        import { db, auth } from './js/firebase-config.js?v=3.7';
         import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -654,8 +654,9 @@
                 }
 
                 docPDF.setFont("helvetica", "bold");
-                docPDF.setFontSize(11);
-                docPDF.text("Relatório de Assistência Técnica (RAT)", 45, 10);
+                docPDF.setFontSize(10.5);
+                // Ajustado para coordenada X=49 para afastar do logótipo e não colar
+                docPDF.text("Relatório de Assistência Técnica (RAT)", 49, 10);
                 
                 docPDF.setFontSize(9.5);
                 docPDF.setTextColor(0, 123, 255);
