@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rg-solucoes-v5';
+const CACHE_NAME = 'rg-solucoes-v7';
 const assetsToCache = [
     './index.html',
     './clientes.html',
